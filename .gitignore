@@ -8,6 +8,12 @@
 .env.production
 .env.*.local
 
+# Deployment docs — contain server IPs and login details
+REDEPLOY.md
+
+# Internal / enterprise docs
+enterprise/
+
 # Node
 node_modules/
 npm-debug.log*
