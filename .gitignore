@@ -1,0 +1,60 @@
+# ==========================================
+# VoteTerminal — .gitignore
+# ==========================================
+
+# Environment / secrets — NEVER commit these
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+build/
+dist/
+*.tsbuildinfo
+
+# pm2
+.pm2/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V5
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# SSL certs (managed by certbot on server)
+*.pem
+*.key
+*.crt
+*.csr
+
+# Sync conflict files
+*.sync-conflict-*
+
+# Test output
+coverage/
+.nyc_output/
+
+# Temp
+tmp/
+temp/

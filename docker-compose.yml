@@ -1,0 +1,69 @@
+# ==========================================
+# VoteTerminal — Docker Compose
+# ==========================================
+# Starts the Node.js backend + nginx reverse proxy.
+# SSL is handled outside this stack (certbot on the host, or a separate
+# reverse proxy like Traefik/Caddy if you prefer fully containerised SSL).
+#
+# Quick start:
+#   cp .env.example .env   # fill in your values
+#   docker compose up -d
+#   docker compose logs -f
+# ==========================================
+
+services:
+
+  # ── Backend: Node.js API + static file server ──────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # The URL your frontend JS will use to reach the API.
+        # For a single-domain setup: /api
+        # For a subdomain setup: https://gdp.yourdomain.com/api
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-/api}
+    container_name: voterterminal-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    # Don't expose port 3001 to the host — nginx proxies to it internally
+    expose:
+      - "3001"
+    networks:
+      - voterterm-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── nginx: reverse proxy + static files ────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: voterterminal-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL certificates — mount from host (managed by certbot)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # nginx cache dir
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - voterterm-net
+
+networks:
+  voterterm-net:
+    driver: bridge
+
+volumes:
+  nginx-cache:

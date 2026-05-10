@@ -1,0 +1,49 @@
+{
+  "name": "secure-voting-app",
+  "version": "1.0.0",
+  "description": "A secure, anonymous voting application with admin management",
+  "main": "voting-app-server.js",
+  "scripts": {
+    "start": "node voting-app-server.js",
+    "dev": "DEBUG=1 node voting-app-server.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "voting",
+    "election",
+    "anonymous",
+    "secure",
+    "democratic",
+    "ranked-choice"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "nodemailer": "^8.0.7",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^7.0.0",
+    "express-validator": "^7.0.0"
+  },
+  "optionalDependencies": {
+    "@sendgrid/mail": "^8.1.0",
+    "@aws-sdk/client-ses": "^3.600.0"
+  },
+  "_optionalNote": "These are only needed if you want native SDK integrations. The default email-service.js uses nodemailer SMTP for all providers and does NOT require these packages. Install them only if you extend email-service.js to use the SendGrid or AWS SDK directly.",
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "eslint": "^8.40.0",
+    "prettier": "^2.8.8",
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}

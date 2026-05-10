@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoteTerminal — Secure, Anonymous Voting for Your Community</title>
+  <meta name="description" content="Free, open-source voting platform for nonprofits, civic organizations, and community groups. Secure, anonymous, and easy to run." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #1a2744;
+      --blue:   #2563a8;
+      --sky:    #3b82c4;
+      --green:  #2a7d4f;
+      --mint:   #e8f5ef;
+      --cream:  #fafaf8;
+      --warm:   #f5f0e8;
+      --text:   #1f2937;
+      --muted:  #6b7280;
+      --border: #e5e7eb;
+      --white:  #ffffff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--navy);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand {
+      color: var(--white);
+      font-size: 1.2rem; font-weight: 700; letter-spacing: .02em;
+    }
+    .nav-brand span { color: #7dd3fc; }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a {
+      color: rgba(255,255,255,.8); font-size: .9rem;
+    }
+    .nav-links a:hover { color: var(--white); text-decoration: none; }
+    .nav-cta {
+      background: var(--sky); color: var(--white) !important;
+      padding: .4rem 1rem; border-radius: 6px; font-weight: 600;
+    }
+    .nav-cta:hover { background: var(--blue); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1e3a6e 60%, #1a4a7a 100%);
+      color: var(--white);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      color: #bfdbfe;
+      font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      padding: .3rem .9rem; border-radius: 99px; margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800; line-height: 1.2;
+      max-width: 760px; margin: 0 auto 1.25rem;
+    }
+    .hero h1 em { color: #7dd3fc; font-style: normal; }
+    .hero p {
+      font-size: 1.15rem; color: rgba(255,255,255,.8);
+      max-width: 580px; margin: 0 auto 2.5rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: transform .1s, opacity .1s;
+    }
+    .btn:hover { transform: translateY(-1px); text-decoration: none; opacity: .92; }
+    .btn-primary { background: var(--sky); color: var(--white); }
+    .btn-outline { background: transparent; color: var(--white); border: 2px solid rgba(255,255,255,.5); }
+    .hero-note {
+      margin-top: 2rem; font-size: .85rem; color: rgba(255,255,255,.5);
+    }
+
+    /* ── TRUST BAR ── */
+    .trust-bar {
+      background: var(--mint); border-top: 3px solid var(--green);
+      padding: 1.25rem 2rem;
+      display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .9rem; font-weight: 600; color: var(--green);
+    }
+    .trust-item svg { width: 18px; height: 18px; }
+
+    /* ── SECTION WRAPPER ── */
+    section { padding: 4.5rem 2rem; }
+    .container { max-width: 1040px; margin: 0 auto; }
+    .section-label {
+      font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: .75rem;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 800; color: var(--navy); margin-bottom: 1rem; line-height: 1.2;
+    }
+    .section-sub {
+      font-size: 1.05rem; color: var(--muted); max-width: 560px; margin-bottom: 3rem;
+    }
+
+    /* ── FEATURES ── */
+    .features { background: var(--cream); }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+    }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--mint); color: var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 1rem;
+    }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: .4rem; }
+    .feature-card p { font-size: .9rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem; counter-reset: steps;
+    }
+    .step { position: relative; }
+    .step-num {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--navy); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1rem; margin-bottom: 1rem;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .4rem; }
+    .step p { font-size: .9rem; color: var(--muted); }
+
+    /* ── PRIVACY MODEL ── */
+    .privacy { background: var(--navy); color: var(--white); }
+    .privacy .section-title { color: var(--white); }
+    .privacy .section-sub { color: rgba(255,255,255,.7); }
+    .privacy-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    }
+    .privacy-box {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px; padding: 1.75rem;
+    }
+    .privacy-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; color: #7dd3fc; }
+    .privacy-box ul { list-style: none; }
+    .privacy-box li {
+      font-size: .9rem; color: rgba(255,255,255,.8);
+      padding: .3rem 0; display: flex; gap: .5rem;
+    }
+    .privacy-box li::before { content: "✓"; color: #4ade80; font-weight: 700; flex-shrink: 0; }
+    @media(max-width: 600px) { .privacy-grid { grid-template-columns: 1fr; } }
+
+    /* ── PRICING TRACKS ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+    @media(max-width: 900px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media(max-width: 560px) { .pricing-grid { grid-template-columns: 1fr; } }
+
+    .track-card {
+      border-radius: 16px; padding: 2rem;
+      border: 2px solid var(--border);
+      position: relative;
+      display: flex; flex-direction: column;
+    }
+    .track-card.featured {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(37,99,168,.08);
+    }
+    .track-card.enterprise-card {
+      border-color: #7c3aed;
+      background: #faf5ff;
+    }
+    .track-badge {
+      position: absolute; top: -12px; left: 1.5rem;
+      background: var(--blue); color: var(--white);
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      padding: .2rem .75rem; border-radius: 99px;
+    }
+    .track-badge.purple { background: #7c3aed; }
+    .track-card h3 { font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: .3rem; }
+    .track-price {
+      font-size: 2rem; font-weight: 800; color: var(--navy); margin: .65rem 0 .2rem;
+      line-height: 1;
+    }
+    .track-price small { font-size: .95rem; font-weight: 400; color: var(--muted); }
+    .track-desc { font-size: .875rem; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.5; }
+    .track-features { list-style: none; margin-bottom: 1.75rem; flex: 1; }
+    .track-features li {
+      font-size: .875rem; padding: .3rem 0;
+      display: flex; gap: .5rem; align-items: flex-start;
+      color: #374151;
+    }
+    .track-features li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+    .track-card .btn { width: 100%; text-align: center; display: block; }
+    .btn-navy { background: var(--navy); color: var(--white); }
+    .btn-purple { background: #7c3aed; color: var(--white); }
+    .btn-purple:hover { background: #6d28d9; }
+
+    /* ── INSTALL SECTION ── */
+    .install-section { background: var(--cream); }
+    .install-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    }
+    @media(max-width: 640px) { .install-grid { grid-template-columns: 1fr; } }
+    .install-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+    }
+    .install-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: .4rem; }
+    .install-card p { font-size: .9rem; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.5; }
+    .install-links { display: flex; flex-direction: column; gap: .6rem; }
+    .install-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .65rem 1rem;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: .9rem; font-weight: 600; color: var(--navy);
+      transition: border-color .15s, background .15s;
+    }
+    .install-link:hover { border-color: var(--blue); background: #eff6ff; text-decoration: none; }
+    .install-link .link-icon { font-size: 1.1rem; }
+    .install-link .link-desc { font-size: .78rem; font-weight: 400; color: var(--muted); display: block; }
+
+    /* ── ENTERPRISE CONSULTATION ── */
+    .consult-section { background: var(--navy); color: var(--white); }
+    .consult-section .section-title { color: var(--white); }
+    .consult-section .section-sub { color: rgba(255,255,255,.7); }
+    .consult-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;
+    }
+    @media(max-width: 700px) { .consult-grid { grid-template-columns: 1fr; } }
+    .consult-bullets { list-style: none; margin-top: 1.5rem; }
+    .consult-bullets li {
+      font-size: .95rem; color: rgba(255,255,255,.8);
+      padding: .45rem 0; display: flex; gap: .6rem;
+    }
+    .consult-bullets li::before { content: "✓"; color: #4ade80; font-weight: 700; flex-shrink: 0; }
+    .consult-note {
+      margin-top: 1.5rem; font-size: .85rem; color: rgba(255,255,255,.5);
+      display: flex; align-items: center; gap: .4rem;
+    }
+
+    .consult-form-box {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px; padding: 2rem;
+    }
+    .consult-form-box h3 {
+      font-size: 1.1rem; font-weight: 700; color: var(--white); margin-bottom: 1.25rem;
+    }
+    .cf-group { margin-bottom: 1rem; }
+    .cf-group label {
+      display: block; font-size: .85rem; font-weight: 600;
+      color: rgba(255,255,255,.8); margin-bottom: .35rem;
+    }
+    .cf-group input, .cf-group textarea, .cf-group select {
+      width: 100%; padding: .65rem .9rem;
+      background: rgba(255,255,255,.1);
+      border: 1.5px solid rgba(255,255,255,.2);
+      border-radius: 8px; font-size: .95rem; color: var(--white);
+      outline: none; transition: border-color .15s;
+    }
+    .cf-group input::placeholder, .cf-group textarea::placeholder { color: rgba(255,255,255,.4); }
+    .cf-group input:focus, .cf-group textarea:focus, .cf-group select:focus {
+      border-color: rgba(255,255,255,.5);
+    }
+    .cf-group textarea { resize: vertical; min-height: 80px; }
+    .cf-group select option { background: #1a2744; color: var(--white); }
+    .cf-submit {
+      width: 100%; padding: .8rem;
+      background: #7c3aed; color: var(--white);
+      border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      transition: background .15s;
+    }
+    .cf-submit:hover { background: #6d28d9; }
+    .cf-submit:disabled { opacity: .6; cursor: not-allowed; }
+    .cf-msg {
+      margin-top: .75rem; padding: .65rem 1rem;
+      border-radius: 8px; font-size: .9rem; font-weight: 600; display: none;
+    }
+
+    /* ── VOTING TYPES ── */
+    .vote-types { background: var(--warm); }
+    .vt-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+    }
+    @media(max-width: 620px) { .vt-grid { grid-template-columns: 1fr; } }
+    .vt-card {
+      background: var(--white); border-radius: 12px;
+      padding: 1.5rem; border: 1px solid var(--border);
+    }
+    .vt-card h3 { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: .4rem; }
+    .vt-card p { font-size: .875rem; color: var(--muted); }
+    .vt-tag {
+      display: inline-block; font-size: .75rem; font-weight: 600;
+      background: #eff6ff; color: var(--blue);
+      padding: .15rem .5rem; border-radius: 4px; margin-bottom: .6rem;
+    }
+
+    /* ── CTA STRIP ── */
+    .cta-strip {
+      background: var(--mint); border-top: 3px solid var(--green);
+      text-align: center; padding: 4rem 2rem;
+    }
+    .cta-strip h2 { font-size: 1.8rem; font-weight: 800; color: var(--navy); margin-bottom: .75rem; }
+    .cta-strip p { color: var(--muted); margin-bottom: 2rem; }
+    .cta-strip .btn-primary { font-size: 1.05rem; padding: .875rem 2.25rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy); color: rgba(255,255,255,.6);
+      padding: 2rem; text-align: center; font-size: .85rem;
+    }
+    footer a { color: #7dd3fc; }
+    footer .footer-links { margin-bottom: .5rem; display: flex; justify-content: center; gap: 1.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">Vote<span>Terminal</span></div>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#pricing">Plans</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/voterterminal/securevote">GitHub</a>
+    <a href="#signup" class="nav-cta">Get started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🗳️ Open Source · Free to self-host</div>
+  <h1>Your community deserves elections it can <em>trust</em></h1>
+  <p>VoteTerminal is a free, open-source voting platform built for nonprofits, civic organizations, HOAs, and community groups — secure, anonymous, and ready in minutes.</p>
+  <div class="hero-actions">
+    <a href="#pricing" class="btn btn-primary">Get started free</a>
+    <a href="https://github.com/voterterminal/securevote" class="btn btn-outline">View on GitHub</a>
+  </div>
+  <p class="hero-note">No credit card required &nbsp;·&nbsp; Free tier covers most elections &nbsp;·&nbsp; Open source forever</p>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    Votes are 100% anonymous
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    Double voting prevented
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    Every voter gets a receipt
+  </div>
+  <div class="trust-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    Full audit trail
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything your election needs, nothing it doesn't</h2>
+    <p class="section-sub">Built specifically for community organizations running real elections — not a survey tool bolted into a voting app.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>True vote anonymity</h3>
+        <p>Voter identity and ballot choices are stored in completely separate records with no shared ID. Even administrators cannot see how anyone voted.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Verified voters, anonymous votes</h3>
+        <p>Every voter is verified by email to prevent duplicate votes — but the verification is never linked to their ballot. You get integrity without surveillance.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🗂️</div>
+        <h3>Voter roll support</h3>
+        <p>Upload a CSV of eligible voters and the system sends each one a personal access code. Only people on the list can vote — perfect for membership elections.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📧</div>
+        <h3>Automatic email receipts</h3>
+        <p>Every voter receives a confirmation email with a unique receipt ID after casting their ballot — proof their vote was recorded, with no personal data attached.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Live results dashboard</h3>
+        <p>Administrators see real-time turnout and tallies as votes come in. Results are calculated automatically when the election closes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Emergency audit trail</h3>
+        <p>A password-protected audit panel lets administrators see who voted (not how) in the event of a dispute. Every access is permanently logged.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Run a secure election in four steps</h2>
+    <p class="section-sub">From setup to results in the same day.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Create your election</h3>
+        <p>Set the name, candidates, voting type, and the open/close window. Takes about two minutes.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Upload your voter roll</h3>
+        <p>For invite-only elections, upload a CSV of eligible voters. The system sends each one a personal access code by email automatically.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Voters cast their ballots</h3>
+        <p>Voters register with their email, enter their access code, review their ballot, and confirm. They receive an email receipt with a confirmation ID.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Results are tallied</h3>
+        <p>When the election closes, results are calculated automatically. Ranked choice, majority, or plurality — all handled for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VOTING TYPES -->
+<section class="vote-types">
+  <div class="container">
+    <div class="section-label">Voting methods</div>
+    <h2 class="section-title">The right method for every decision</h2>
+    <p class="section-sub">Choose the voting type that fits your election when you create it.</p>
+    <div class="vt-grid">
+      <div class="vt-card">
+        <div class="vt-tag">Plurality</div>
+        <h3>Most votes wins</h3>
+        <p>The candidate with the most votes wins, even without a majority. Ideal for simple board or officer elections.</p>
+      </div>
+      <div class="vt-card">
+        <div class="vt-tag">Majority</div>
+        <h3>More than 50% required</h3>
+        <p>A winner must receive over 50% of votes. Used when a clear mandate is important, such as constitutional amendments.</p>
+      </div>
+      <div class="vt-card">
+        <div class="vt-tag">Ranked Choice</div>
+        <h3>Instant runoff</h3>
+        <p>Voters rank candidates in order. If no one wins outright, the last-place candidate is eliminated and votes are redistributed until a winner emerges.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY MODEL -->
+<section class="privacy">
+  <div class="container">
+    <div class="section-label" style="color:#7dd3fc;">Privacy by design</div>
+    <h2 class="section-title">Your vote is yours alone</h2>
+    <p class="section-sub">VoteTerminal was built around one principle: we verify who you are so we can verify you haven't voted twice — but we never record how you voted.</p>
+    <div class="privacy-grid">
+      <div class="privacy-box">
+        <h3>What we store</h3>
+        <ul>
+          <li>Your email address (for verification only)</li>
+          <li>That you cast a ballot (yes/no)</li>
+          <li>When you voted (timestamp)</li>
+          <li>Your confirmation receipt ID</li>
+        </ul>
+      </div>
+      <div class="privacy-box">
+        <h3>What we never store</h3>
+        <ul>
+          <li>Who you voted for</li>
+          <li>Any link between your identity and your ballot</li>
+          <li>Your name or address beyond verification</li>
+          <li>Anything an administrator can use to see your vote</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-label">Plans</div>
+    <h2 class="section-title">Pick the right plan for your organization</h2>
+    <p class="section-sub">Monthly subscriptions. No per-election fees. Cancel any time.</p>
+    <div class="pricing-grid">
+
+      <!-- Self-hosted -->
+      <div class="track-card">
+        <h3>Self-hosted</h3>
+        <div class="track-price">Free <small>forever</small></div>
+        <p class="track-desc">Open source. Run it on your own server. Your data never leaves your infrastructure.</p>
+        <ul class="track-features">
+          <li>Full source code (MIT license)</li>
+          <li>Unlimited elections &amp; voters</li>
+          <li>Bring your own email provider</li>
+          <li>Complete data ownership</li>
+          <li>Community support</li>
+        </ul>
+        <a href="#install" class="btn btn-navy">Download &amp; install →</a>
+      </div>
+
+      <!-- Community -->
+      <div class="track-card">
+        <h3>Community</h3>
+        <div class="track-price">$19 <small>/month</small></div>
+        <p class="track-desc">Perfect for small orgs running regular elections without managing a server.</p>
+        <ul class="track-features">
+          <li>10 elections per month</li>
+          <li>500 voters per election</li>
+          <li>Your subdomain on voterterminal.com</li>
+          <li>Email confirmations included</li>
+          <li>Custom branding &amp; logo</li>
+          <li>Email support</li>
+        </ul>
+        <a href="#signup" class="btn btn-primary">Start free trial →</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="track-card featured">
+        <div class="track-badge">Most popular</div>
+        <h3>Pro</h3>
+        <div class="track-price">$75 <small>/month</small></div>
+        <p class="track-desc">Unlimited elections and expanded voter capacity for active organizations.</p>
+        <ul class="track-features">
+          <li>Unlimited elections</li>
+          <li>2,000 voters per election</li>
+          <li>Everything in Community</li>
+          <li>Advanced audit logs</li>
+          <li>Priority support</li>
+          <li>Custom CNAME subdomain</li>
+        </ul>
+        <a href="#signup" class="btn btn-primary">Start free trial →</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="track-card enterprise-card">
+        <div class="track-badge purple">Enterprise</div>
+        <h3>Enterprise</h3>
+        <div class="track-price" style="font-size:1.5rem;padding-top:.2rem;">Custom <small>pricing</small></div>
+        <p class="track-desc">Large orgs, state or multi-chapter associations, unlimited scale &amp; white-label.</p>
+        <ul class="track-features">
+          <li>Unlimited elections &amp; voters</li>
+          <li>Multi-chapter / parent org support</li>
+          <li>White-label (remove VoteTerminal branding)</li>
+          <li>Dedicated server &amp; infrastructure</li>
+          <li>SLA guarantee</li>
+          <li>Dedicated support rep</li>
+          <li>Custom feature development</li>
+        </ul>
+        <a href="#enterprise" class="btn btn-purple">Book a consultation →</a>
+      </div>
+
+    </div>
+
+    <p style="text-align:center;margin-top:2rem;font-size:.875rem;color:var(--muted);">
+      All managed plans include a 14-day free trial &nbsp;·&nbsp; No credit card required to start &nbsp;·&nbsp; Competitors charge per election — we don't.
+    </p>
+  </div>
+</section>
+
+<!-- SIGNUP / START FREE TRIAL -->
+<section id="signup" style="background:#f0f6ff;padding:5rem 1.5rem;text-align:center;">
+  <h2 style="font-size:2rem;color:#1a2744;margin-bottom:0.75rem;">Start your 14-day free trial</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 2.5rem;">No credit card required. Community and Pro plans — cancel any time.</p>
+
+  <form id="signupForm" style="max-width:420px;margin:0 auto;text-align:left;" onsubmit="handleSignup(event)">
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-weight:600;margin-bottom:0.35rem;color:#1a2744;">Organisation name</label>
+      <input id="s_orgName" type="text" placeholder="Gwinnett Democratic Party" required
+        style="width:100%;padding:0.75rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1rem;">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-weight:600;margin-bottom:0.35rem;color:#1a2744;">Subdomain</label>
+      <div style="display:flex;align-items:center;border:1.5px solid #d1d5db;border-radius:8px;overflow:hidden;">
+        <input id="s_subdomain" type="text" placeholder="yourorg" required pattern="[a-z0-9-]{2,32}"
+          style="flex:1;padding:0.75rem;border:none;font-size:1rem;outline:none;">
+        <span style="padding:0.75rem;background:#f9fafb;color:#6b7280;font-size:0.9rem;white-space:nowrap;">.voterterminal.com</span>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-weight:600;margin-bottom:0.35rem;color:#1a2744;">Admin email</label>
+      <input id="s_email" type="email" placeholder="you@yourorg.com" required
+        style="width:100%;padding:0.75rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1rem;">
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block;font-weight:600;margin-bottom:0.35rem;color:#1a2744;">Password</label>
+      <input id="s_password" type="password" placeholder="Min 8 characters" required minlength="8"
+        style="width:100%;padding:0.75rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1rem;">
+    </div>
+    <div id="signupMsg" style="display:none;margin-bottom:1rem;padding:0.75rem 1rem;border-radius:8px;font-size:0.95rem;"></div>
+    <button type="submit" id="signupBtn"
+      style="width:100%;padding:0.85rem;background:#2563a8;color:white;font-size:1rem;font-weight:700;border:none;border-radius:8px;cursor:pointer;">
+      Create free account →
+    </button>
+    <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:#6b7280;">
+      Already have an account? <a href="#" onclick="promptLogin()" style="color:#2563a8;">Log in</a>
+    </p>
+  </form>
+</section>
+
+<!-- INSTALL / DOWNLOAD -->
+<section id="install" class="install-section">
+  <div class="container">
+    <div class="section-label">Self-host edition</div>
+    <h2 class="section-title">Download &amp; install in minutes</h2>
+    <p class="section-sub">VoteTerminal is open source and free to self-host. Runs on any Linux server — community and enterprise editions both included.</p>
+    <div class="install-grid">
+
+      <div class="install-card">
+        <h3>🖥️ Community Edition (direct install)</h3>
+        <p>Installs directly on Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux, or Fedora. Apache + pm2 + Let's Encrypt SSL set up automatically.</p>
+        <div class="install-links">
+          <a href="https://github.com/voterterminal/securevote" class="install-link">
+            <span class="link-icon">📦</span>
+            <span>
+              Download from GitHub
+              <span class="link-desc">Full source + install.sh · MIT License</span>
+            </span>
+          </a>
+          <a href="https://github.com/voterterminal/securevote/blob/main/INSTALL.md" class="install-link">
+            <span class="link-icon">📖</span>
+            <span>
+              Installation guide
+              <span class="link-desc">System requirements, step-by-step instructions</span>
+            </span>
+          </a>
+          <a href="https://github.com/voterterminal/securevote/blob/main/SELF_HOST.md" class="install-link">
+            <span class="link-icon">🎨</span>
+            <span>
+              Branding &amp; customization guide
+              <span class="link-desc">Custom logo, org name, email provider setup</span>
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <h3>🐳 Docker Edition</h3>
+        <p>Run VoteTerminal in containers with nginx and automatic SSL. Works on any OS with Docker Engine 20.10+ and Docker Compose v2.</p>
+        <div class="install-links">
+          <a href="https://github.com/voterterminal/securevote" class="install-link">
+            <span class="link-icon">🐳</span>
+            <span>
+              Docker Compose setup
+              <span class="link-desc">Dockerfile + docker-compose.yml + nginx config included</span>
+            </span>
+          </a>
+          <a href="https://github.com/voterterminal/securevote/blob/main/INSTALL.md#docker-edition" class="install-link">
+            <span class="link-icon">📖</span>
+            <span>
+              Docker install guide
+              <span class="link-desc">Prerequisites, build steps, management commands</span>
+            </span>
+          </a>
+        </div>
+        <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:.85rem;color:#92400e;">
+          <strong>Minimum requirements:</strong> 512 MB RAM, 2 GB disk, 1 vCPU, public IP, domain name
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ENTERPRISE CONSULTATION -->
+<section id="enterprise" class="consult-section">
+  <div class="container">
+    <div class="section-label" style="color:#a78bfa;">Enterprise &amp; Multi-chapter</div>
+    <div class="consult-grid">
+      <div>
+        <h2 class="section-title">Large organizations deserve a custom solution</h2>
+        <p class="section-sub">State associations, multi-chapter orgs, and large nonprofits have needs that go beyond standard plans. Let's talk.</p>
+        <ul class="consult-bullets">
+          <li>Unlimited voters across unlimited elections</li>
+          <li>Multi-chapter support — manage sub-organizations under one umbrella</li>
+          <li>White-label: your domain, your branding, no VoteTerminal mention</li>
+          <li>Dedicated server infrastructure, not shared hosting</li>
+          <li>SLA with guaranteed uptime during election windows</li>
+          <li>Custom feature development scoped to your workflow</li>
+          <li>Dedicated support rep available during elections (8 AM – 5 PM Mon–Fri)</li>
+        </ul>
+        <p class="consult-note">📅 We respond to all consultation requests within one business day (Mon–Fri, 8 AM – 5 PM ET).</p>
+      </div>
+
+      <div class="consult-form-box">
+        <h3>Request a consultation</h3>
+        <form id="consultForm" onsubmit="handleConsult(event)">
+          <div class="cf-group">
+            <label>Your name</label>
+            <input id="cf_name" type="text" placeholder="Jane Smith" required>
+          </div>
+          <div class="cf-group">
+            <label>Organization name</label>
+            <input id="cf_org" type="text" placeholder="Georgia Democratic Party" required>
+          </div>
+          <div class="cf-group">
+            <label>Email address</label>
+            <input id="cf_email" type="email" placeholder="jane@yourorg.com" required>
+          </div>
+          <div class="cf-group">
+            <label>Phone (optional)</label>
+            <input id="cf_phone" type="tel" placeholder="(404) 555-0100">
+          </div>
+          <div class="cf-group">
+            <label>Approximate number of voters</label>
+            <select id="cf_size">
+              <option value="2001-5000">2,001 – 5,000</option>
+              <option value="5001-20000">5,001 – 20,000</option>
+              <option value="20001-100000">20,001 – 100,000</option>
+              <option value="100000+">100,000+</option>
+            </select>
+          </div>
+          <div class="cf-group">
+            <label>Tell us about your needs</label>
+            <textarea id="cf_notes" placeholder="Multi-chapter setup, number of chapters, special requirements…"></textarea>
+          </div>
+          <button type="submit" class="cf-submit" id="cf_btn">Request a meeting →</button>
+          <div id="cf_msg" class="cf-msg"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Managed signup ────────────────────────────────────────────────────────────
+async function handleSignup(e) {
+  e.preventDefault();
+  const btn = document.getElementById('signupBtn');
+  const msg = document.getElementById('signupMsg');
+  const orgName   = document.getElementById('s_orgName').value.trim();
+  const subdomain = document.getElementById('s_subdomain').value.trim().toLowerCase();
+  const email     = document.getElementById('s_email').value.trim();
+  const password  = document.getElementById('s_password').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+  msg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgName, subdomain, adminEmail: email, adminPassword: password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Signup failed');
+
+    msg.style.display = 'block';
+    msg.style.background = '#dcfce7'; msg.style.color = '#166534'; msg.style.border = '1px solid #bbf7d0';
+    msg.innerHTML = `✅ <strong>Account created!</strong> Your ballot portal is live at:<br>
+      <a href="${data.adminUrl}" style="color:#166534;font-weight:600;">${data.adminUrl}</a>`;
+    btn.textContent = 'Account created!';
+  } catch (err) {
+    msg.style.display = 'block';
+    msg.style.background = '#fef2f2'; msg.style.color = '#991b1b'; msg.style.border = '1px solid #fecaca';
+    msg.textContent = '⚠️ ' + err.message;
+    btn.disabled = false;
+    btn.textContent = 'Create free account →';
+  }
+}
+
+function promptLogin() {
+  const sub = prompt('Enter your subdomain:');
+  if (sub) window.location.href = `https://${sub.trim()}.voterterminal.com/admin`;
+}
+
+// ── Enterprise consultation ───────────────────────────────────────────────────
+function handleConsult(e) {
+  e.preventDefault();
+  const btn = document.getElementById('cf_btn');
+  const msg = document.getElementById('cf_msg');
+
+  const name  = document.getElementById('cf_name').value.trim();
+  const org   = document.getElementById('cf_org').value.trim();
+  const email = document.getElementById('cf_email').value.trim();
+  const phone = document.getElementById('cf_phone').value.trim();
+  const size  = document.getElementById('cf_size').value;
+  const notes = document.getElementById('cf_notes').value.trim();
+
+  const subject = encodeURIComponent(`VoteTerminal Enterprise Consultation — ${org}`);
+  const body = encodeURIComponent(
+`New enterprise consultation request from voterterminal.com
+
+Name:         ${name}
+Organization: ${org}
+Email:        ${email}
+Phone:        ${phone || 'Not provided'}
+Voter scale:  ${size}
+
+Notes:
+${notes || 'None provided'}
+
+---
+Please respond within one business day (Mon–Fri 8 AM – 5 PM).
+`
+  );
+
+  btn.disabled = true;
+  btn.textContent = 'Opening email…';
+
+  // Open the user's email client with the form pre-filled
+  window.location.href = `mailto:elections@voterterminal.com?subject=${subject}&body=${body}`;
+
+  // Show success message after a short delay
+  setTimeout(() => {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(74,222,128,.15)';
+    msg.style.color = '#4ade80';
+    msg.style.border = '1px solid rgba(74,222,128,.3)';
+    msg.textContent = '✅ Your email client should have opened. We\'ll reply within one business day.';
+    btn.disabled = false;
+    btn.textContent = 'Request a meeting →';
+  }, 800);
+}
+</script>
+
+<!-- CTA STRIP -->
+<div class="cta-strip">
+  <h2>Ready to run your first election?</h2>
+  <p>Start with a 14-day free trial — no credit card, no setup fees.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+    <a href="#signup" class="btn btn-primary">Start free trial</a>
+    <a href="#install" class="btn" style="background:var(--white);color:var(--navy);border:2px solid var(--border);">Download &amp; self-host</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="https://github.com/voterterminal/securevote">GitHub</a>
+    <a href="mailto:elections@voterterminal.com">elections@voterterminal.com</a>
+    <a href="#pricing">Plans</a>
+    <a href="#install">Install guide</a>
+    <a href="#enterprise">Enterprise</a>
+  </div>
+  <p>© 2026 VoteTerminal · Open source, built for communities · <a href="https://github.com/voterterminal/securevote/blob/main/LICENSE">MIT License</a></p>
+</footer>
+
+</body>
+</html>
