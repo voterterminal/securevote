@@ -27,7 +27,7 @@ export default function VotingApp() {
 // ==========================================
 
 function OrgLandingPage({ orgConfig, onEnter }) {
-  const orgName   = (orgConfig && orgConfig.orgName)    || 'Gwinnett Democratic Party';
+  const orgName   = (orgConfig && orgConfig.orgName)    || 'Your Organization';
   const orgTagline = (orgConfig && orgConfig.orgTagline) || 'Official Ballot';
   const logoUrl   = (orgConfig && orgConfig.logoUrl)    || null;
 
@@ -87,7 +87,7 @@ function LoginSelector({ onSelectRole }) {
   return (
     <div className="login-selector">
       <div className="selector-container">
-        <h1 className="main-title">SecureVote</h1>
+        <h1 className="main-title">voterterminal.com</h1>
         <p className="tagline">Anonymous Voting Platform</p>
         
         <div className="role-buttons">
@@ -219,7 +219,10 @@ function AdminPanel({ setUserType, setCurrentUser }) {
   return (
     <div className="admin-dashboard">
       <header className="admin-header">
-        <h1>Admin Dashboard</h1>
+        <div className="admin-brand">
+          <img src="/logo.svg" alt="VoteTerminal" className="admin-logo" />
+          <h1>Admin Dashboard</h1>
+        </div>
         <button className="logout-btn" onClick={handleLogout}>Logout</button>
       </header>
 
@@ -249,6 +252,12 @@ function AdminPanel({ setUserType, setCurrentUser }) {
           🔐 Emergency Actions
         </button>
         <button
+          className={`tab ${activeTab === 'affidavits' ? 'active' : ''}`}
+          onClick={() => setActiveTab('affidavits')}
+        >
+          📋 Affidavits
+        </button>
+        <button
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
@@ -268,6 +277,9 @@ function AdminPanel({ setUserType, setCurrentUser }) {
         )}
         {activeTab === 'emergency' && (
           <EmergencyActions elections={elections} token={adminToken} />
+        )}
+        {activeTab === 'affidavits' && (
+          <AffidavitManager token={adminToken} />
         )}
         {activeTab === 'settings' && (
           <AdminSettings token={adminToken} />
@@ -291,6 +303,64 @@ function AdminSettings({ token }) {
   const [addLoading, setAddLoading] = useState(false);
 
   const [admins, setAdmins] = useState([]);
+
+  // Email template state
+  const DEFAULT_INVITE = {
+    subject:     "You're invited to vote: {{electionName}}",
+    intro:       "You have been invited to participate in <strong>{{electionName}}</strong>.",
+    instruction: "Use the access code below when you go to cast your ballot. Keep it safe — this code is personal to you.",
+    help:        "If you lose your code, contact your election administrator for assistance. Your vote will be completely anonymous once cast.",
+    footnote:    "Sent by {{orgName}}. If you were not expecting this invitation, you can safely ignore this email."
+  };
+  const [inviteTpl, setInviteTpl] = useState(DEFAULT_INVITE);
+  const [tplMsg, setTplMsg]       = useState(null);
+  const [tplLoading, setTplLoading] = useState(false);
+  const [tplSaving, setTplSaving]   = useState(false);
+
+  useEffect(() => {
+    setTplLoading(true);
+    fetch(`${API_URL}/admin/email-templates`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => { if (data.invite) setInviteTpl(data.invite); })
+      .catch(() => {})
+      .finally(() => setTplLoading(false));
+  }, [token]);
+
+  const handleTplChange = (field, value) => {
+    setInviteTpl(prev => ({ ...prev, [field]: value }));
+    setTplMsg(null);
+  };
+
+  const handleTplSave = async (e) => {
+    e.preventDefault();
+    setTplSaving(true);
+    setTplMsg(null);
+    try {
+      const res = await fetch(`${API_URL}/admin/email-templates/invite`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(inviteTpl)
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setTplMsg({ type: 'success', text: 'Email template saved.' });
+    } catch (err) {
+      setTplMsg({ type: 'error', text: err.message });
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
+  const handleTplReset = () => {
+    setInviteTpl(DEFAULT_INVITE);
+    setTplMsg({ type: 'success', text: 'Defaults restored — click Save to apply.' });
+  };
+
+  // Preview helper — replaces placeholders with example values
+  const prev = (str) => (str || '')
+    .replace(/\{\{electionName\}\}/g, '2025 GCDP Officer Election')
+    .replace(/\{\{orgName\}\}/g, 'Your Organization');
 
   // Billing state
   const [billing, setBilling] = useState(null);
@@ -587,6 +657,88 @@ function AdminSettings({ token }) {
           </ul>
         </div>
       )}
+
+      {/* Invite Email Template */}
+      <div className="settings-card email-tpl-card">
+        <div className="email-tpl-header">
+          <div>
+            <h2>Voter Invite Email</h2>
+            <p className="email-tpl-subtitle">
+              Customise the email sent to members when a closed election voter roll is uploaded.
+              Use <code>{'{{electionName}}'}</code> and <code>{'{{orgName}}'}</code> as placeholders.
+            </p>
+          </div>
+          <button type="button" className="tpl-reset-btn" onClick={handleTplReset}>
+            Reset to defaults
+          </button>
+        </div>
+
+        {tplLoading ? <p>Loading…</p> : (
+          <div className="email-tpl-layout">
+            {/* Editor */}
+            <form onSubmit={handleTplSave} className="email-tpl-form">
+              <div className="form-group">
+                <label>Subject line</label>
+                <input type="text" value={inviteTpl.subject}
+                  onChange={e => handleTplChange('subject', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Opening paragraph</label>
+                <textarea rows="2" value={inviteTpl.intro}
+                  onChange={e => handleTplChange('intro', e.target.value)} />
+                <small>Appears above the access code box. HTML allowed (e.g. &lt;strong&gt;).</small>
+              </div>
+              <div className="form-group">
+                <label>Code instructions</label>
+                <textarea rows="2" value={inviteTpl.instruction}
+                  onChange={e => handleTplChange('instruction', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Help text</label>
+                <textarea rows="2" value={inviteTpl.help}
+                  onChange={e => handleTplChange('help', e.target.value)} />
+                <small>Shown below the "Go to Ballot" button.</small>
+              </div>
+              <div className="form-group">
+                <label>Footnote</label>
+                <textarea rows="2" value={inviteTpl.footnote}
+                  onChange={e => handleTplChange('footnote', e.target.value)} />
+                <small>Appears below the divider line at the bottom of the email.</small>
+              </div>
+              {tplMsg && <p className={`settings-msg ${tplMsg.type}`}>{tplMsg.text}</p>}
+              <button type="submit" className="submit-btn" disabled={tplSaving}>
+                {tplSaving ? 'Saving…' : 'Save Email Template'}
+              </button>
+            </form>
+
+            {/* Live preview */}
+            <div className="email-tpl-preview">
+              <p className="email-tpl-preview-label">Live preview</p>
+              <div className="email-mock">
+                <div className="email-mock-meta">
+                  <span className="email-mock-field"><span>Subject</span>{prev(inviteTpl.subject)}</span>
+                </div>
+                <div className="email-mock-body">
+                  <h3 style={{margin:'0 0 12px',color:'#1a1a2e'}}>You're invited to vote</h3>
+                  <p style={{margin:'0 0 10px',fontSize:'14px'}}>Hi jane.smith@gmail.com,</p>
+                  <p style={{margin:'0 0 10px',fontSize:'14px'}} dangerouslySetInnerHTML={{__html: prev(inviteTpl.intro)}} />
+                  <p style={{margin:'0 0 14px',fontSize:'14px'}}>{prev(inviteTpl.instruction)}</p>
+                  <div className="email-mock-code-box">
+                    <span className="email-mock-code-label">Your Access Code</span>
+                    <span className="email-mock-code">GK7P2X</span>
+                  </div>
+                  <div style={{margin:'12px 0',textAlign:'center'}}>
+                    <span className="email-mock-btn">Go to Ballot →</span>
+                  </div>
+                  <p style={{margin:'0 0 16px',fontSize:'12px',color:'#555'}}>{prev(inviteTpl.help)}</p>
+                  <hr style={{border:'none',borderTop:'1px solid #eee',margin:'12px 0'}} />
+                  <p style={{margin:0,fontSize:'11px',color:'#999'}}>{prev(inviteTpl.footnote)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -641,9 +793,23 @@ function CreateElection({ token, onElectionCreated }) {
     candidates: ['', ''],
     startTime: '',
     endTime: '',
-    requiresAffidavit: true
+    requiresAffidavit: true,
+    affidavitId: 'affidavit_default'
   });
   const [saving, setSaving] = useState(false);
+  const [voterRollFile, setVoterRollFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null); // null | 'uploading' | 'done' | 'error'
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [affidavitTemplates, setAffidavitTemplates] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/admin/affidavits`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => Array.isArray(data) && setAffidavitTemplates(data))
+      .catch(() => {});
+  }, [token]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -666,11 +832,21 @@ function CreateElection({ token, onElectionCreated }) {
     }));
   };
 
+  const handleVoterRollChange = (e) => {
+    const file = e.target.files[0];
+    setVoterRollFile(file || null);
+    setUploadStatus(null);
+    setUploadMessage('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setUploadStatus(null);
+    setUploadMessage('');
 
     try {
+      // Step 1: Create the election
       const response = await fetch(`${API_URL}/admin/elections`, {
         method: 'POST',
         headers: {
@@ -681,8 +857,38 @@ function CreateElection({ token, onElectionCreated }) {
       });
 
       if (!response.ok) throw new Error('Failed to create election');
-      
-      alert('Election created successfully!');
+      const election = await response.json();
+
+      // Step 2: Upload voter roll if a file was selected
+      if (voterRollFile && election.id) {
+        setUploadStatus('uploading');
+        setUploadMessage('Sending access codes to voters…');
+
+        const csvContent = await voterRollFile.text();
+        const rollResponse = await fetch(`${API_URL}/admin/elections/${election.id}/voter-roll`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ csvContent })
+        });
+
+        if (!rollResponse.ok) {
+          const err = await rollResponse.json().catch(() => ({}));
+          throw new Error(err.error || 'Voter roll upload failed');
+        }
+
+        const rollData = await rollResponse.json();
+        const count = rollData.invited || rollData.count || '—';
+        setUploadStatus('done');
+        setUploadMessage(`✓ Election created — ${count} voter${count !== 1 ? 's' : ''} invited`);
+      } else {
+        setUploadStatus('done');
+        setUploadMessage('✓ Election created');
+      }
+
+      // Reset form
       setFormData({
         name: '',
         description: '',
@@ -690,11 +896,14 @@ function CreateElection({ token, onElectionCreated }) {
         candidates: ['', ''],
         startTime: '',
         endTime: '',
-        requiresAffidavit: true
+        requiresAffidavit: true,
+        affidavitId: 'affidavit_default'
       });
+      setVoterRollFile(null);
       onElectionCreated();
     } catch (err) {
-      alert('Error: ' + err.message);
+      setUploadStatus('error');
+      setUploadMessage('Error: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -776,22 +985,241 @@ function CreateElection({ token, onElectionCreated }) {
           </div>
         </div>
 
-        <div className="form-group checkbox">
-          <label>
-            <input
-              type="checkbox"
-              name="requiresAffidavit"
-              checked={formData.requiresAffidavit}
+        <div className="form-group affidavit-selector">
+          <label>Voter Affidavit</label>
+          <div className="affidavit-row">
+            <select
+              name="affidavitId"
+              value={formData.affidavitId}
               onChange={handleChange}
+              disabled={!formData.requiresAffidavit}
+            >
+              {affidavitTemplates.length === 0 && (
+                <option value="affidavit_default">Standard Voter Affidavit</option>
+              )}
+              {affidavitTemplates.map(tpl => (
+                <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
+              ))}
+            </select>
+            <label className="affidavit-toggle">
+              <input
+                type="checkbox"
+                name="requiresAffidavit"
+                checked={formData.requiresAffidavit}
+                onChange={handleChange}
+              />
+              <span>Require affidavit</span>
+            </label>
+          </div>
+          {formData.requiresAffidavit && (
+            <div className="affidavit-preview">
+              <span className="affidavit-preview-label">Voter will see:</span>
+              <p className="affidavit-preview-text">
+                {affidavitTemplates.find(t => t.id === formData.affidavitId)?.text
+                  || 'Select a template above'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="form-group voter-roll-upload">
+          <label>Voter Roll (CSV) <span className="optional-tag">optional</span></label>
+          <div className="voter-roll-drop">
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              id="voterRollInput"
+              onChange={handleVoterRollChange}
+              style={{ display: 'none' }}
             />
-            Require voter affidavit
-          </label>
+            <label htmlFor="voterRollInput" className="file-pick-btn">
+              {voterRollFile ? `📄 ${voterRollFile.name}` : 'Choose CSV file'}
+            </label>
+            {voterRollFile && (
+              <button
+                type="button"
+                className="remove-file-btn"
+                onClick={() => { setVoterRollFile(null); setUploadStatus(null); setUploadMessage(''); }}
+              >✕</button>
+            )}
+          </div>
+          <p className="field-hint">
+            One email per row (or a CSV with an <code>email</code> column). Each voter will receive
+            a unique access code by email. Upload now or add later from the election settings.
+          </p>
+          {uploadStatus && (
+            <p className={`upload-status upload-status--${uploadStatus}`}>{uploadMessage}</p>
+          )}
         </div>
 
         <button type="submit" disabled={saving} className="submit-btn">
-          {saving ? 'Creating...' : 'Create Election'}
+          {saving
+            ? (uploadStatus === 'uploading' ? 'Sending invites…' : 'Creating…')
+            : 'Create Election'}
         </button>
       </form>
+    </div>
+  );
+}
+
+// ==========================================
+// AFFIDAVIT MANAGER
+// ==========================================
+
+function AffidavitManager({ token }) {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);   // null | 'new' | templateObject
+  const [formName, setFormName] = useState('');
+  const [formText, setFormText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const load = () => {
+    setLoading(true);
+    fetch(`${API_URL}/admin/affidavits`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(data => { setTemplates(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [token]);
+
+  const openNew = () => {
+    setEditing('new');
+    setFormName('');
+    setFormText('');
+    setError('');
+  };
+
+  const openEdit = (tpl) => {
+    setEditing(tpl);
+    setFormName(tpl.name);
+    setFormText(tpl.text);
+    setError('');
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setError('');
+  };
+
+  const handleSave = async () => {
+    if (!formName.trim() || !formText.trim()) {
+      setError('Both a name and affidavit text are required.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const isNew = editing === 'new';
+      const url = isNew
+        ? `${API_URL}/admin/affidavits`
+        : `${API_URL}/admin/affidavits/${editing.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: formName.trim(), text: formText.trim() })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Save failed');
+      }
+      load();
+      setEditing(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (tpl) => {
+    if (tpl.builtIn) { alert('Built-in templates cannot be deleted.'); return; }
+    if (!window.confirm(`Delete "${tpl.name}"? This cannot be undone.`)) return;
+    try {
+      await fetch(`${API_URL}/admin/affidavits/${tpl.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      load();
+    } catch {
+      alert('Delete failed.');
+    }
+  };
+
+  return (
+    <div className="affidavit-manager">
+      <div className="affidavit-manager-header">
+        <h2>Affidavit Templates</h2>
+        <button className="add-btn" onClick={openNew}>+ New Template</button>
+      </div>
+      <p className="affidavit-manager-hint">
+        Each election can display a different affidavit that voters must agree to before voting.
+        Built-in templates can be edited but not deleted. Changes to a template do not affect
+        elections that have already been created.
+      </p>
+
+      {loading && <p>Loading…</p>}
+
+      {!loading && templates.length === 0 && (
+        <p className="empty-state">No affidavit templates yet.</p>
+      )}
+
+      <div className="affidavit-list">
+        {templates.map(tpl => (
+          <div key={tpl.id} className={`affidavit-card ${tpl.builtIn ? 'built-in' : ''}`}>
+            <div className="affidavit-card-header">
+              <span className="affidavit-card-name">{tpl.name}</span>
+              {tpl.builtIn && <span className="built-in-badge">built-in</span>}
+              <div className="affidavit-card-actions">
+                <button className="edit-btn" onClick={() => openEdit(tpl)}>Edit</button>
+                {!tpl.builtIn && (
+                  <button className="delete-btn" onClick={() => handleDelete(tpl)}>Delete</button>
+                )}
+              </div>
+            </div>
+            <p className="affidavit-card-text">{tpl.text}</p>
+          </div>
+        ))}
+      </div>
+
+      {editing && (
+        <div className="modal-overlay" onClick={cancelEdit}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <h3>{editing === 'new' ? 'New Affidavit Template' : `Edit — ${editing.name}`}</h3>
+            <div className="form-group">
+              <label>Template Name *</label>
+              <input
+                type="text"
+                value={formName}
+                onChange={e => setFormName(e.target.value)}
+                placeholder="e.g., GCDP Officer Election Oath"
+              />
+            </div>
+            <div className="form-group">
+              <label>Affidavit Text *</label>
+              <textarea
+                value={formText}
+                onChange={e => setFormText(e.target.value)}
+                rows="5"
+                placeholder="I affirm that I am…"
+              />
+              <small>Voters will read and check a box confirming this statement before voting.</small>
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <div className="modal-actions">
+              <button onClick={cancelEdit} className="cancel-btn">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="submit-btn" style={{width:'auto',padding:'10px 24px'}}>
+                {saving ? 'Saving…' : 'Save Template'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1556,17 +1984,23 @@ function VoterRegistration({ election, onRegisterSuccess, onBack }) {
             />
           </div>
 
-          <div className="form-group checkbox">
-            <label>
-              <input
-                type="checkbox"
-                name="affidavit"
-                checked={formData.affidavit}
-                onChange={handleChange}
-              />
-              <span>I affirm that I am a registered voter and eligible to vote in this election *</span>
-            </label>
-          </div>
+          {election.requiresAffidavit !== false && (
+            <div className="form-group checkbox affidavit-voter-block">
+              <div className="affidavit-voter-text">
+                {election.affidavitText || 'I affirm that I am eligible to vote in this election.'}
+              </div>
+              <label>
+                <input
+                  type="checkbox"
+                  name="affidavit"
+                  checked={formData.affidavit}
+                  onChange={handleChange}
+                  required
+                />
+                <span>I agree to the above affidavit *</span>
+              </label>
+            </div>
+          )}
 
           {error && <div className="error-message">{error}</div>}
 

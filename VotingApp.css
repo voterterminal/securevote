@@ -233,6 +233,18 @@ input:focus, textarea:focus, select:focus {
   box-shadow: var(--shadow);
 }
 
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+
+.admin-logo {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
 .admin-header h1 {
   font-size: 1.875rem;
 }
@@ -496,6 +508,105 @@ input:focus, textarea:focus, select:focus {
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
+
+/* ── Voter roll upload ───────────────────────────────────────────── */
+.voter-roll-upload {
+  background: var(--neutral-50, #f9fafb);
+  border: 1px dashed var(--neutral-300, #d1d5db);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.voter-roll-drop {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: 4px;
+}
+
+.file-pick-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--neutral-100, #f3f4f6);
+  border: 1px solid var(--neutral-300, #d1d5db);
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-primary, #111827);
+  transition: var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 260px;
+  text-overflow: ellipsis;
+}
+
+.file-pick-btn:hover {
+  background: var(--neutral-200, #e5e7eb);
+  border-color: var(--primary);
+}
+
+.remove-file-btn {
+  background: none;
+  border: none;
+  color: var(--neutral-400, #9ca3af);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.remove-file-btn:hover {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.optional-tag {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--neutral-400, #9ca3af);
+  margin-left: 6px;
+  text-transform: lowercase;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  color: var(--neutral-500, #6b7280);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.field-hint code {
+  font-family: monospace;
+  background: var(--neutral-200, #e5e7eb);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+}
+
+.upload-status {
+  margin-top: var(--spacing-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--border-radius);
+}
+
+.upload-status--uploading {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.upload-status--done {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.upload-status--error {
+  color: #991b1b;
+  background: #fee2e2;
+}
+/* ────────────────────────────────────────────────────────────────── */
 
 .error-message {
   background: #fee2e2;
@@ -2036,4 +2147,394 @@ input:focus, textarea:focus, select:focus {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
+}
+
+/* ── Affidavit selector (CreateElection form) ───────────────────── */
+.affidavit-selector {
+  background: var(--neutral-50, #f9fafb);
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.affidavit-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.affidavit-row select {
+  flex: 1;
+  min-width: 200px;
+}
+
+.affidavit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.affidavit-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.affidavit-preview {
+  margin-top: var(--spacing-sm);
+  background: white;
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.affidavit-preview-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neutral-500, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.affidavit-preview-text {
+  font-size: 0.875rem;
+  color: var(--neutral-700, #374151);
+  line-height: 1.5;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Affidavit voter block (VoterRegistration) ──────────────────── */
+.affidavit-voter-block {
+  background: var(--neutral-50, #f9fafb);
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.affidavit-voter-text {
+  font-size: 0.9rem;
+  color: var(--neutral-800, #1f2937);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--neutral-200, #e5e7eb);
+}
+
+/* ── Affidavit Manager tab ──────────────────────────────────────── */
+.affidavit-manager {
+  max-width: 800px;
+}
+
+.affidavit-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.affidavit-manager-header h2 {
+  margin: 0;
+}
+
+.affidavit-manager-hint {
+  font-size: 0.875rem;
+  color: var(--neutral-500, #6b7280);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+}
+
+.affidavit-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.affidavit-card {
+  background: white;
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.affidavit-card.built-in {
+  border-left: 3px solid var(--accent);
+}
+
+.affidavit-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs, 6px);
+  flex-wrap: wrap;
+}
+
+.affidavit-card-name {
+  font-weight: 600;
+  color: var(--primary);
+  flex: 1;
+}
+
+.built-in-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: white;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.affidavit-card-actions {
+  display: flex;
+  gap: var(--spacing-xs, 6px);
+}
+
+.affidavit-card-actions .edit-btn {
+  background: var(--neutral-100, #f3f4f6);
+  border: 1px solid var(--neutral-300, #d1d5db);
+  border-radius: var(--border-radius);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--primary);
+  transition: var(--transition);
+}
+
+.affidavit-card-actions .edit-btn:hover {
+  background: var(--neutral-200, #e5e7eb);
+}
+
+.affidavit-card-actions .delete-btn {
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: var(--border-radius);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #b91c1c;
+  transition: var(--transition);
+}
+
+.affidavit-card-actions .delete-btn:hover {
+  background: #fee2e2;
+}
+
+.affidavit-card-text {
+  font-size: 0.875rem;
+  color: var(--neutral-700, #374151);
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Generic modal (reused by AffidavitManager) ─────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-box {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 560px;
+  width: 100%;
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-box h3 {
+  color: var(--primary);
+  margin-bottom: var(--spacing-lg);
+  font-size: 1.2rem;
+}
+
+.modal-box .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.modal-box .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: var(--neutral-100, #f3f4f6);
+  border: 1px solid var(--neutral-300, #d1d5db);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--neutral-700, #374151);
+  transition: var(--transition);
+}
+
+.cancel-btn:hover {
+  background: var(--neutral-200, #e5e7eb);
+}
+
+/* ── Invite email template editor ──────────────────────────────── */
+.email-tpl-card {
+  max-width: 100%;
+}
+
+.email-tpl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.email-tpl-header h2 {
+  margin: 0 0 4px;
+}
+
+.email-tpl-subtitle {
+  font-size: 0.875rem;
+  color: var(--neutral-500, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.email-tpl-subtitle code {
+  font-family: monospace;
+  background: var(--neutral-100, #f3f4f6);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.tpl-reset-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--neutral-300, #d1d5db);
+  border-radius: var(--border-radius);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  color: var(--neutral-500, #6b7280);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.tpl-reset-btn:hover {
+  background: var(--neutral-100, #f3f4f6);
+  color: var(--primary);
+}
+
+.email-tpl-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .email-tpl-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.email-tpl-form .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.email-tpl-form small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--neutral-400, #9ca3af);
+}
+
+.email-tpl-preview-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neutral-400, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.email-mock {
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  font-family: sans-serif;
+  font-size: 13px;
+  background: #fff;
+}
+
+.email-mock-meta {
+  background: var(--neutral-50, #f9fafb);
+  border-bottom: 1px solid var(--neutral-200, #e5e7eb);
+  padding: 8px 14px;
+}
+
+.email-mock-field {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #555;
+}
+
+.email-mock-field span:first-child {
+  color: #999;
+  min-width: 48px;
+}
+
+.email-mock-body {
+  padding: 18px 20px;
+}
+
+.email-mock-code-box {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 14px;
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.email-mock-code-label {
+  display: block;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+.email-mock-code {
+  font-family: monospace;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #1a1a2e;
+}
+
+.email-mock-btn {
+  display: inline-block;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
 }

@@ -191,6 +191,6 @@ sudo certbot renew --dry-run
 
 ## Getting Help
 
-- GitHub Issues: [github.com/yourusername/voterterminal](https://github.com)
+- GitHub Issues: [github.com/voterterminal/securevote](https://github.com/voterterminal/securevote/issues)
 - Email: elections@voterterminal.com
 - Managed hosting: [voterterminal.com](https://voterterminal.com)

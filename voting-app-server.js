@@ -40,9 +40,31 @@ const DATABASE = {
   auditLog: [], // For emergency: who voted + their voteId (emergency-access only)
   invalidations: [], // Log of all voter invalidations & re-tallies
   results: [],
+  // Affidavit templates — admins create named texts; elections snapshot the chosen text at creation time.
+  affidavits: [
+    {
+      id: 'affidavit_default',
+      name: 'Standard Voter Affidavit',
+      text: 'I affirm that I am a registered member of this organization and am eligible to vote in this election. I have not voted and will not vote more than once in this election.',
+      createdAt: new Date(),
+      builtIn: true
+    }
+    // Additional org-specific templates are loaded at startup from AFFIDAVIT_TEMPLATES_FILE (see below)
+  ],
   // SaaS: per-tenant email config. When set, overrides platform-level EMAIL_PROVIDER env vars.
   // Shape matches EmailService tenantConfig — see email-service.js for full docs.
   tenantEmailConfig: null,
+  // Editable email templates — admins can customise text via the Settings tab.
+  // {{electionName}} and {{orgName}} are replaced at send time.
+  emailTemplates: {
+    invite: {
+      subject:     "You're invited to vote: {{electionName}}",
+      intro:       "You have been invited to participate in <strong>{{electionName}}</strong>.",
+      instruction: "Use the access code below when you go to cast your ballot. Keep it safe — this code is personal to you.",
+      help:        "If you lose your code, contact your election administrator for assistance. Your vote will be completely anonymous once cast.",
+      footnote:    "Sent by {{orgName}}. If you were not expecting this invitation, you can safely ignore this email."
+    }
+  },
   // Org branding — configurable by admin. SaaS: each tenant gets their own.
   orgConfig: {
     orgName: process.env.ORG_NAME || 'Gwinnett Democratic Party',
@@ -89,7 +111,9 @@ app.get('/api/elections', (req, res) => {
       type: e.type,
       candidates: e.candidates,
       endTime: e.endTime,
-      inviteOnly: e.inviteOnly || false
+      inviteOnly: e.inviteOnly || false,
+      requiresAffidavit: e.requiresAffidavit !== false,
+      affidavitText: e.affidavitText || 'I affirm that I am eligible to vote in this election.'
     }));
   res.json(active);
 });
@@ -244,6 +268,23 @@ app.put('/api/admin/settings/org', verifyAdmin, (req, res) => {
   res.json({ success: true, orgConfig: DATABASE.orgConfig });
 });
 
+// Get email templates
+app.get('/api/admin/email-templates', verifyAdmin, (req, res) => {
+  res.json(DATABASE.emailTemplates);
+});
+
+// Update invite email template
+app.put('/api/admin/email-templates/invite', verifyAdmin, (req, res) => {
+  const { subject, intro, instruction, help, footnote } = req.body;
+  const t = DATABASE.emailTemplates.invite;
+  if (subject     !== undefined) t.subject     = subject;
+  if (intro       !== undefined) t.intro       = intro;
+  if (instruction !== undefined) t.instruction = instruction;
+  if (help        !== undefined) t.help        = help;
+  if (footnote    !== undefined) t.footnote    = footnote;
+  res.json({ success: true, invite: t });
+});
+
 // ==========================================
 // ADMIN ENDPOINTS - ELECTION MANAGEMENT
 // ==========================================
@@ -258,8 +299,19 @@ app.post('/api/admin/elections', verifyAdmin, (req, res) => {
     startTime,
     endTime,
     requiresAffidavit,
+    affidavitId,       // optional — ID of an affidavit template
     inviteOnly         // boolean — if true, only voters on the voter roll can vote
   } = req.body;
+
+  // Resolve affidavit text: use selected template, fall back to first built-in
+  let affidavitText = 'I affirm that I am eligible to vote in this election.';
+  if (affidavitId) {
+    const tpl = DATABASE.affidavits.find(a => a.id === affidavitId);
+    if (tpl) affidavitText = tpl.text;
+  } else {
+    const def = DATABASE.affidavits.find(a => a.id === 'affidavit_default');
+    if (def) affidavitText = def.text;
+  }
 
   const election = {
     id: `election_${Date.now()}`,
@@ -270,6 +322,8 @@ app.post('/api/admin/elections', verifyAdmin, (req, res) => {
     startTime: new Date(startTime),
     endTime: new Date(endTime),
     requiresAffidavit: requiresAffidavit !== false,
+    affidavitId: affidavitId || 'affidavit_default',
+    affidavitText,     // snapshot — voters see this exact text; editing the template later won't change live elections
     createdBy: req.admin.email,
     createdAt: new Date(),
     status: 'active', // 'active', 'ended', 'draft'
@@ -287,6 +341,52 @@ app.post('/api/admin/elections', verifyAdmin, (req, res) => {
 // Get All Elections (Admin)
 app.get('/api/admin/elections', verifyAdmin, (req, res) => {
   res.json(DATABASE.elections);
+});
+
+// ==========================================
+// ADMIN ENDPOINTS - AFFIDAVIT TEMPLATES
+// ==========================================
+
+// List all affidavit templates
+app.get('/api/admin/affidavits', verifyAdmin, (req, res) => {
+  res.json(DATABASE.affidavits);
+});
+
+// Create affidavit template
+app.post('/api/admin/affidavits', verifyAdmin, (req, res) => {
+  const { name, text } = req.body;
+  if (!name || !text) return res.status(400).json({ error: 'name and text are required' });
+  const tpl = {
+    id: `affidavit_${Date.now()}`,
+    name: name.trim(),
+    text: text.trim(),
+    createdAt: new Date(),
+    builtIn: false
+  };
+  DATABASE.affidavits.push(tpl);
+  res.status(201).json(tpl);
+});
+
+// Update affidavit template (name/text only; does NOT retroactively change elections)
+app.put('/api/admin/affidavits/:id', verifyAdmin, (req, res) => {
+  const tpl = DATABASE.affidavits.find(a => a.id === req.params.id);
+  if (!tpl) return res.status(404).json({ error: 'Affidavit template not found' });
+  const { name, text } = req.body;
+  if (name) tpl.name = name.trim();
+  if (text) tpl.text = text.trim();
+  tpl.updatedAt = new Date();
+  res.json(tpl);
+});
+
+// Delete affidavit template (built-in templates cannot be deleted)
+app.delete('/api/admin/affidavits/:id', verifyAdmin, (req, res) => {
+  const idx = DATABASE.affidavits.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Affidavit template not found' });
+  if (DATABASE.affidavits[idx].builtIn) {
+    return res.status(403).json({ error: 'Built-in templates cannot be deleted' });
+  }
+  DATABASE.affidavits.splice(idx, 1);
+  res.json({ success: true });
 });
 
 // Update Election
@@ -382,11 +482,20 @@ app.post('/api/admin/elections/:id/voter-roll', verifyAdmin, async (req, res) =>
     });
 
     // Send invite email
+    const appUrl = (process.env.APP_URL || '').replace(/\/$/, '');
+    const electionUrl = appUrl ? `${appUrl}/?election=${election.id}` : null;
+    const tpl = DATABASE.emailTemplates.invite;
     const { subject, html } = templates.inviteCode({
       recipientName: row.name,
       electionName: election.name,
       accessCode,
+      electionUrl,
       fromName: emailService.config.fromName,
+      customSubject:     tpl.subject,
+      customIntro:       tpl.intro,
+      customInstruction: tpl.instruction,
+      customHelp:        tpl.help,
+      customFootnote:    tpl.footnote,
     });
     const sent = await emailService.send({ to: row.email, subject, html });
     if (sent) results.sent.push(row.email);
@@ -1131,18 +1240,33 @@ function sendReinstateEmail(email, electionName, reason) {
 // VOTER ROLL HELPER FUNCTIONS
 // ==========================================
 
-// Parse a two-column CSV (email, name) into an array of objects.
-// Handles quoted fields, trims whitespace, skips blank lines.
+// Parse a CSV of voters. Only "email" column is required; "name" is optional.
+// Handles quoted fields, trims whitespace, skips blank lines and invalid emails.
+// Supports plain email-only lists (no header needed if every line is an email address).
 function parseInviteCSV(csvContent) {
   const lines = csvContent.trim().split(/\r?\n/);
-  if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
+  if (lines.length < 1) throw new Error('CSV is empty');
 
+  const firstLine = lines[0].trim().toLowerCase().replace(/^"|"$/g, '');
+
+  // Detect headerless email-only list: first line looks like an email address
+  if (firstLine.includes('@') && !firstLine.includes(',')) {
+    const rows = [];
+    for (const line of lines) {
+      const email = line.trim().toLowerCase().replace(/^"|"$/g, '');
+      if (!email || !email.includes('@')) continue;
+      rows.push({ email, name: email });
+    }
+    if (rows.length === 0) throw new Error('No valid email addresses found in CSV');
+    return rows;
+  }
+
+  // Header row present — parse columns
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
   const emailIdx = headers.indexOf('email');
-  const nameIdx  = headers.indexOf('name');
+  const nameIdx  = headers.indexOf('name'); // optional
 
   if (emailIdx === -1) throw new Error('CSV must include an "email" column');
-  if (nameIdx  === -1) throw new Error('CSV must include a "name" column');
 
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
@@ -1151,11 +1275,13 @@ function parseInviteCSV(csvContent) {
 
     const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
     const email = cols[emailIdx]?.toLowerCase().trim();
-    const name  = cols[nameIdx]?.trim();
+    const name  = nameIdx !== -1 ? cols[nameIdx]?.trim() : null;
 
     if (!email || !email.includes('@')) continue; // skip invalid rows silently
     rows.push({ email, name: name || email });
   }
+
+  if (rows.length === 0) throw new Error('No valid email addresses found in CSV');
   return rows;
 }
 
@@ -1170,6 +1296,37 @@ function generateAccessCode() {
   }
   return code; // e.g. "ABCD-EFG2"
 }
+
+// ==========================================
+// AFFIDAVIT TEMPLATE LOADER
+// ==========================================
+// Org-specific templates live outside the codebase so the general release
+// stays neutral. Point AFFIDAVIT_TEMPLATES_FILE at a JSON file that exports
+// an array of { id, name, text } objects (builtIn is forced to true).
+//
+// GDP example (.env):
+//   AFFIDAVIT_TEMPLATES_FILE=./affidavits.gdp.json
+//
+(function loadAffidavitTemplates() {
+  const file = process.env.AFFIDAVIT_TEMPLATES_FILE;
+  if (!file) return;
+  try {
+    const fspath = require('path').resolve(file);
+    const raw    = require('fs').readFileSync(fspath, 'utf8');
+    const extras = JSON.parse(raw);
+    if (!Array.isArray(extras)) throw new Error('Expected a JSON array');
+    extras.forEach(tpl => {
+      if (!tpl.id || !tpl.name || !tpl.text) return; // skip malformed entries
+      // Avoid duplicates on hot-reload
+      if (!DATABASE.affidavits.find(a => a.id === tpl.id)) {
+        DATABASE.affidavits.push({ ...tpl, createdAt: new Date(), builtIn: true });
+      }
+    });
+    console.log(`Loaded ${extras.length} affidavit template(s) from ${fspath}`);
+  } catch (err) {
+    console.error(`[affidavits] Failed to load AFFIDAVIT_TEMPLATES_FILE: ${err.message}`);
+  }
+})();
 
 // ==========================================
 // START SERVER

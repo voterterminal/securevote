@@ -27,7 +27,48 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { EmailService } = require('./email-service');
+const fs   = require('fs');
+const path = require('path');
 require('dotenv').config();
+
+// ==========================================
+// JSON PERSISTENCE
+// ==========================================
+// Tenants are saved to a JSON file on every write.
+// On startup the file is loaded back into memory so
+// a pm2 restart / server reboot never loses tenant data.
+// Location: ./tenants.json (same dir as this file)
+// Override with TENANTS_FILE env var.
+
+const TENANTS_FILE = process.env.TENANTS_FILE || path.join(__dirname, 'tenants.json');
+const TENANTS_TMP  = TENANTS_FILE + '.tmp';
+
+function saveTenants() {
+  try {
+    // Atomic write: write to .tmp then rename so a crash mid-write
+    // never leaves a corrupt file.
+    fs.writeFileSync(TENANTS_TMP, JSON.stringify(TENANTS, null, 2), 'utf8');
+    fs.renameSync(TENANTS_TMP, TENANTS_FILE);
+  } catch (err) {
+    console.error('[persistence] Failed to save tenants.json:', err.message);
+  }
+}
+
+function loadTenants() {
+  if (!fs.existsSync(TENANTS_FILE)) {
+    console.log('[persistence] No tenants.json found — starting fresh.');
+    return;
+  }
+  try {
+    const raw = fs.readFileSync(TENANTS_FILE, 'utf8');
+    const saved = JSON.parse(raw);
+    Object.assign(TENANTS, saved);
+    console.log(`[persistence] Loaded ${Object.keys(saved).length} tenant(s) from tenants.json`);
+  } catch (err) {
+    console.error('[persistence] Failed to load tenants.json:', err.message);
+    console.error('[persistence] Starting with empty tenant store. Check the file for corruption.');
+  }
+}
 
 // ── Optional: Stripe ──────────────────────────────────────────────────────────
 let stripe = null;
@@ -171,10 +212,11 @@ function createTenant({ subdomain, orgName, adminEmail, adminPassword, plan = 'f
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       trialEndsAt: (effectivePlan === 'free' && !isGrandfathered)
-        ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         : null
     }
   };
+  saveTenants();
   return TENANTS[subdomain];
 }
 
@@ -233,7 +275,10 @@ function requireActiveSubscription(req, res, next) {
     });
   }
 
-  // Trial expired
+  // Trialing — Stripe is managing the trial, allow through
+  if (sub.status === 'trialing') return next();
+
+  // Trial expired (legacy local trial check)
   if (sub.trialEndsAt && new Date(sub.trialEndsAt) < new Date() && sub.plan === 'free') {
     return res.status(402).json({
       error: 'Your free trial has ended. Upgrade to continue running elections.',
@@ -355,6 +400,7 @@ app.put('/api/superadmin/tenants/:subdomain/plan', verifySuperAdmin, (req, res) 
   if (plan && !PLANS[plan]) return res.status(400).json({ error: `Invalid plan. Options: ${Object.keys(PLANS).join(', ')}` });
   if (plan) tenant.subscription.plan = plan;
   if (status) tenant.subscription.status = status;
+  saveTenants();
   res.json({ success: true, subscription: tenant.subscription });
 });
 
@@ -362,6 +408,7 @@ app.put('/api/superadmin/tenants/:subdomain/plan', verifySuperAdmin, (req, res) 
 app.delete('/api/superadmin/tenants/:subdomain', verifySuperAdmin, (req, res) => {
   if (!TENANTS[req.params.subdomain]) return res.status(404).json({ error: 'Tenant not found' });
   delete TENANTS[req.params.subdomain];
+  saveTenants();
   res.json({ success: true, message: `Tenant ${req.params.subdomain} deleted` });
 });
 
@@ -369,7 +416,7 @@ app.delete('/api/superadmin/tenants/:subdomain', verifySuperAdmin, (req, res) =>
 // PUBLIC SELF-SIGNUP (SaaS onboarding)
 // ==========================================
 app.post('/api/signup', loginLimiter, async (req, res) => {
-  const { subdomain, orgName, adminEmail, adminPassword, logoUrl } = req.body;
+  const { subdomain, orgName, adminEmail, adminPassword, logoUrl, plan } = req.body;
 
   if (!subdomain || !orgName || !adminEmail || !adminPassword) {
     return res.status(400).json({ error: 'subdomain, orgName, adminEmail, adminPassword are required' });
@@ -407,12 +454,40 @@ app.post('/api/signup', loginLimiter, async (req, res) => {
       }).catch(() => {});
     }
 
+    const adminUrl = `https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin`;
+
+    // If Stripe is configured and a paid plan was chosen, create a checkout session with 7-day trial
+    let checkoutUrl = null;
+    const selectedPlan = ['starter', 'pro'].includes(plan) ? plan : 'starter';
+    if (stripe) {
+      const priceId = process.env[`STRIPE_PRICE_${selectedPlan.toUpperCase()}`];
+      if (priceId) {
+        try {
+          const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            payment_method_types: ['card'],
+            customer_email: adminEmail,
+            line_items: [{ price: priceId, quantity: 1 }],
+            metadata: { subdomain, plan: selectedPlan },
+            subscription_data: {
+              trial_period_days: 7,
+              metadata: { subdomain, plan: selectedPlan }
+            },
+            success_url: `${adminUrl}?upgraded=1`,
+            cancel_url: `${adminUrl}?upgrade=cancelled`,
+            allow_promotion_codes: true
+          });
+          checkoutUrl = session.url;
+        } catch (e) { /* non-fatal — fall through to admin URL */ }
+      }
+    }
+
     res.json({
       success: true,
       url: `https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}`,
-      adminUrl: `https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin`,
-      plan: 'free',
-      planDetails: PLANS.free
+      adminUrl,
+      checkoutUrl,
+      plan: selectedPlan
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -451,7 +526,7 @@ app.post('/api/stripe/checkout', requireTenant, async (req, res) => {
       metadata: { subdomain: tenant.subdomain, plan },
       subscription_data: {
         metadata: { subdomain: tenant.subdomain, plan },
-        trial_period_days: tenant.subscription.plan === 'free' ? 0 : undefined
+        trial_period_days: (!tenant.subscription.stripeSubscriptionId) ? 7 : undefined
       },
       success_url: `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin?upgraded=1`,
       cancel_url:  `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin?upgrade=cancelled`,
@@ -537,7 +612,9 @@ app.post('/api/stripe/webhook', (req, res) => {
       if (tenant) {
         tenant.subscription.stripeCustomerId = sub.customer;
         tenant.subscription.stripeSubscriptionId = sub.subscription;
-        tenant.subscription.status = 'active';
+        // Status will be updated by customer.subscription.updated — set trialing for now
+        tenant.subscription.status = 'trialing';
+        saveTenants();
       }
       break;
     }
@@ -546,7 +623,10 @@ app.post('/api/stripe/webhook', (req, res) => {
       if (tenant) {
         const planId = resolvePlanFromStripePrice(sub.items.data[0].price.id);
         if (planId) tenant.subscription.plan = planId;
-        tenant.subscription.status = sub.status === 'active' ? 'active' : 'past_due';
+        if (sub.status === 'trialing') tenant.subscription.status = 'trialing';
+        else if (sub.status === 'active') tenant.subscription.status = 'active';
+        else tenant.subscription.status = 'past_due';
+        saveTenants();
       }
       break;
     }
@@ -555,12 +635,16 @@ app.post('/api/stripe/webhook', (req, res) => {
       if (tenant) {
         tenant.subscription.status = 'cancelled';
         tenant.subscription.plan = 'free';
+        saveTenants();
       }
       break;
     }
     case 'invoice.payment_failed': {
       const tenant = findTenantByStripeCustomer(sub.customer);
-      if (tenant) tenant.subscription.status = 'past_due';
+      if (tenant) {
+        tenant.subscription.status = 'past_due';
+        saveTenants();
+      }
       break;
     }
   }
@@ -781,8 +865,6 @@ app.get('/api/admin/elections/:id/results', requireTenant, verifyAdmin, (req, re
 // ==========================================
 // SERVE REACT APP (catch-all)
 // ==========================================
-const path = require('path');
-const fs = require('fs');
 const buildPath = path.join(__dirname, 'public');
 
 if (fs.existsSync(buildPath)) {
@@ -795,10 +877,16 @@ if (fs.existsSync(buildPath)) {
 // ==========================================
 // START
 // ==========================================
-const PORT = process.env.PORT || 3001;
+// Load persisted tenants before accepting connections
+loadTenants();
+
+// Default port 3002 — keeps tenant-server out of the way of
+// voting-app-server.js which runs on 3001 (GDP single-tenant).
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`VoteTerminal multi-tenant server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Base domain: ${process.env.BASE_DOMAIN || 'voterterminal.com'}`);
+  console.log(`Persistence:  ${TENANTS_FILE}`);
   console.log(`Stripe: ${stripe ? 'enabled' : 'disabled (set STRIPE_SECRET_KEY to enable)'}`);
 });

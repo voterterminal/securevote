@@ -65,7 +65,7 @@ docker compose up -d --build
 ### Option 3 — Managed hosting
 
 Skip the server entirely. We handle setup, updates, email delivery, and SSL.
-→ [voterterminal.com](https://voterterminal.com) — 14-day free trial, no credit card required.
+→ [voterterminal.com](https://voterterminal.com) — 7-day free trial, Starter from $29/mo.
 
 ---
 
@@ -195,9 +195,9 @@ docker compose up -d --build app  # redeploy after changes
 
 ## 💳 Plans
 
-| | Self-hosted | Community | Pro | Enterprise |
+| | Self-hosted | Starter | Pro | Enterprise |
 |---|---|---|---|---|
-| **Price** | Free forever | $19/mo | $75/mo | Custom |
+| **Price** | Free forever | $29/mo | $75/mo | Custom |
 | **Elections** | Unlimited | 10/month | Unlimited | Unlimited |
 | **Voters per election** | Unlimited | 500 | 2,000 | Unlimited |
 | **Email delivery** | Bring your own | ✅ Included | ✅ Included | ✅ Included |
@@ -206,7 +206,7 @@ docker compose up -d --build app  # redeploy after changes
 | **Multi-chapter** | ❌ | ❌ | ❌ | ✅ |
 | **SLA** | ❌ | ❌ | ❌ | ✅ |
 
-Managed plans include a **14-day free trial** — no credit card required. No per-election fees, ever. Competitors charge $99–$299 per election; VoteTerminal's flat monthly rate saves most active organizations money within 2 months.
+Managed plans include a **7-day free trial** — no setup fees, cancel any time. No per-election fees, ever. Competitors charge $99–$299 per election; VoteTerminal's flat monthly rate saves most active organizations money within 2 months.
 
 → [voterterminal.com/#pricing](https://voterterminal.com/#pricing)
 

@@ -323,32 +323,52 @@ const templates = {
   /**
    * Invitation email for invite-only elections.
    * Delivers the voter's personal access code.
+   *
+   * Custom text fields (all optional — fall back to defaults):
+   *   customIntro       — body paragraph before the code box (may contain HTML; {{electionName}} replaced)
+   *   customInstruction — "use your code" sentence
+   *   customHelp        — "if you lose your code" paragraph
+   *   customFootnote    — disclaimer line at the bottom ({{orgName}} replaced)
+   *   customSubject     — email subject line ({{electionName}} replaced)
    */
-  inviteCode({ recipientName, electionName, accessCode, electionUrl = null, fromName = 'SecureVote' }) {
+  inviteCode({
+    recipientName, electionName, accessCode,
+    electionUrl = null, fromName = 'SecureVote',
+    customSubject, customIntro, customInstruction, customHelp, customFootnote
+  }) {
+    const r = (str, fallback) => {
+      const s = (str || fallback)
+        .replace(/\{\{electionName\}\}/g, electionName)
+        .replace(/\{\{orgName\}\}/g, fromName);
+      return s;
+    };
+
+    const subject     = r(customSubject,     `You're invited to vote: {{electionName}}`);
+    const intro       = r(customIntro,       `You have been invited to participate in <strong>{{electionName}}</strong>.`);
+    const instruction = r(customInstruction, `Use the access code below when you go to cast your ballot. Keep it safe — this code is personal to you.`);
+    const help        = r(customHelp,        `If you lose your code, contact your election administrator for assistance. Your vote will be completely anonymous once cast.`);
+    const footnote    = r(customFootnote,    `Sent by {{orgName}}. If you were not expecting this invitation, you can safely ignore this email.`);
+
     const urlLine = electionUrl
       ? `<p style="margin:16px 0;"><a href="${electionUrl}" style="background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:5px;text-decoration:none;font-weight:bold;">Go to Ballot →</a></p>`
       : '';
+
     return {
-      subject: `You're invited to vote: ${electionName}`,
+      subject,
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
           <h2 style="color:#1a1a2e;">You're invited to vote</h2>
           <p>Hi ${recipientName},</p>
-          <p>You have been invited to participate in <strong>${electionName}</strong>.</p>
-          <p>Use the access code below when you go to cast your ballot. Keep it safe — this code is personal to you.</p>
+          <p>${intro}</p>
+          <p>${instruction}</p>
           <div style="background:#f5f5f5;border-radius:6px;padding:20px;margin:20px 0;text-align:center;">
             <p style="margin:0;font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.05em;">Your Access Code</p>
             <p style="margin:8px 0 0;font-family:monospace;font-size:32px;font-weight:bold;letter-spacing:4px;color:#1a1a2e;">${accessCode}</p>
           </div>
           ${urlLine}
-          <p style="font-size:14px;color:#555;">
-            If you lose your code, contact your election administrator for assistance.
-            Your vote will be completely anonymous once cast.
-          </p>
+          <p style="font-size:14px;color:#555;">${help}</p>
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
-          <p style="font-size:12px;color:#999;">
-            Sent by ${fromName}. If you were not expecting this invitation, you can safely ignore this email.
-          </p>
+          <p style="font-size:12px;color:#999;">${footnote}</p>
         </div>
       `,
     };

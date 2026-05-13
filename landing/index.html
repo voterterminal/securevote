@@ -43,7 +43,9 @@
     .nav-brand {
       color: var(--white);
       font-size: 1.2rem; font-weight: 700; letter-spacing: .02em;
+      display: flex; align-items: center; gap: .5rem;
     }
+    .nav-brand img { width: 28px; height: 28px; }
     .nav-brand span { color: #7dd3fc; }
     .nav-links { display: flex; gap: 2rem; }
     .nav-links a {
@@ -179,6 +181,74 @@
     }
     .privacy-box li::before { content: "✓"; color: #4ade80; font-weight: 700; flex-shrink: 0; }
     @media(max-width: 600px) { .privacy-grid { grid-template-columns: 1fr; } }
+
+    /* ── SECURITY SECTION ── */
+    .sec-arch-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1rem; margin: 2.5rem 0 1rem; flex-wrap: wrap;
+    }
+    .sec-arch-box {
+      flex: 1; min-width: 200px; max-width: 280px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 12px; padding: 1.25rem;
+    }
+    .sec-arch-label {
+      font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: #7dd3fc; margin-bottom: .75rem;
+    }
+    .sec-arch-fields { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .75rem; }
+    .sec-field {
+      font-size: .85rem; color: rgba(255,255,255,.75);
+      background: rgba(255,255,255,.06); border-radius: 6px;
+      padding: .3rem .65rem;
+    }
+    .sec-field-key { background: rgba(250,204,21,.15); color: #fde68a; }
+    .sec-arch-note { font-size: .75rem; color: rgba(255,255,255,.4); text-align: center; }
+    .sec-arch-divider {
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    .sec-no-link {
+      background: rgba(239,68,68,.2); border: 1px solid rgba(239,68,68,.4);
+      color: #fca5a5; border-radius: 8px;
+      padding: .5rem .75rem; font-size: .85rem; font-weight: 700;
+      text-align: center; line-height: 1.4;
+    }
+    .sec-arch-caption {
+      font-size: .9rem; color: rgba(255,255,255,.6);
+      max-width: 660px; margin: 0 auto 2.5rem; text-align: center; line-height: 1.6;
+    }
+    .sec-steps-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+      gap: 1.25rem; margin-bottom: 2rem;
+    }
+    .sec-step {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px; padding: 1.25rem;
+    }
+    .sec-step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--blue); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; margin-bottom: .75rem;
+    }
+    .sec-step h3 { font-size: .95rem; font-weight: 700; color: #7dd3fc; margin-bottom: .4rem; }
+    .sec-step p { font-size: .85rem; color: rgba(255,255,255,.7); line-height: 1.55; }
+    .sec-guarantees {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+      gap: 1.25rem; margin-top: 2.5rem;
+    }
+    .sec-guarantee {
+      display: flex; gap: .85rem; align-items: flex-start;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px; padding: 1.1rem;
+    }
+    .sec-g-icon { font-size: 1.4rem; flex-shrink: 0; line-height: 1; margin-top: .1rem; }
+    .sec-guarantee strong { display: block; color: #fff; font-size: .9rem; margin-bottom: .3rem; }
+    .sec-guarantee p { font-size: .82rem; color: rgba(255,255,255,.65); line-height: 1.5; margin: 0; }
 
     /* ── PRICING TRACKS ── */
     .pricing-grid {
@@ -353,9 +423,10 @@
 
 <!-- NAV -->
 <nav>
-  <div class="nav-brand">Vote<span>Terminal</span></div>
+  <div class="nav-brand"><img src="/logo.svg" alt="VoteTerminal logo">Vote<span>Terminal</span></div>
   <div class="nav-links">
     <a href="#how-it-works">How it works</a>
+    <a href="#security">Security</a>
     <a href="#pricing">Plans</a>
     <a href="#install">Install</a>
     <a href="https://github.com/voterterminal/securevote">GitHub</a>
@@ -493,30 +564,130 @@
   </div>
 </section>
 
-<!-- PRIVACY MODEL -->
-<section class="privacy">
+<!-- SECURITY & PRIVACY -->
+<section class="privacy" id="security">
   <div class="container">
-    <div class="section-label" style="color:#7dd3fc;">Privacy by design</div>
-    <h2 class="section-title">Your vote is yours alone</h2>
-    <p class="section-sub">VoteTerminal was built around one principle: we verify who you are so we can verify you haven't voted twice — but we never record how you voted.</p>
-    <div class="privacy-grid">
+    <div class="section-label" style="color:#7dd3fc;">Security &amp; Privacy</div>
+    <h2 class="section-title">Built so no one — not even us — can see your vote</h2>
+    <p class="section-sub">Most voting tools claim anonymity but store enough data to reconstruct who voted for what. VoteTerminal is architected differently at the database level.</p>
+
+    <!-- Two-table architecture -->
+    <div class="sec-arch-row">
+      <div class="sec-arch-box">
+        <div class="sec-arch-label">Voter table</div>
+        <div class="sec-arch-fields">
+          <div class="sec-field">📧 Email address</div>
+          <div class="sec-field">✅ Has voted (yes/no)</div>
+          <div class="sec-field">🕐 Timestamp</div>
+          <div class="sec-field sec-field-key">🔑 Receipt ID</div>
+        </div>
+        <div class="sec-arch-note">Identity lives here</div>
+      </div>
+      <div class="sec-arch-divider">
+        <div class="sec-no-link">✗<br><small>No link</small></div>
+      </div>
+      <div class="sec-arch-box">
+        <div class="sec-arch-label">Ballot table</div>
+        <div class="sec-arch-fields">
+          <div class="sec-field">🗳️ Election ID</div>
+          <div class="sec-field">☑️ Candidate chosen</div>
+          <div class="sec-field">🕐 Timestamp</div>
+          <div class="sec-field sec-field-key">🔑 Receipt ID</div>
+        </div>
+        <div class="sec-arch-note">Choices live here</div>
+      </div>
+    </div>
+    <p class="sec-arch-caption">The receipt ID is a random token — it proves a ballot exists but carries no name or email. Even with full database access, it is mathematically impossible to link a specific person to a specific ballot choice.</p>
+
+    <!-- How it works step by step -->
+    <div class="sec-steps-grid">
+      <div class="sec-step">
+        <div class="sec-step-num">1</div>
+        <h3>You verify your identity</h3>
+        <p>You enter your email. The system checks you're on the voter roll and sends a one-time access code. This confirms you're eligible — nothing more.</p>
+      </div>
+      <div class="sec-step">
+        <div class="sec-step-num">2</div>
+        <h3>You cast your ballot</h3>
+        <p>You select your candidate and confirm. Your choice is written to the ballot table with a random receipt ID. Your name is never written to that table.</p>
+      </div>
+      <div class="sec-step">
+        <div class="sec-step-num">3</div>
+        <h3>Your voter record is updated</h3>
+        <p>The voter table records that you voted (yes/no) and your receipt ID. The receipt ID is the same random token — it does not contain your ballot choice.</p>
+      </div>
+      <div class="sec-step">
+        <div class="sec-step-num">4</div>
+        <h3>You get a receipt</h3>
+        <p>You receive an email with your receipt ID. This proves your vote was counted. If you can show the receipt exists in the ballot table, your vote is verified — without revealing what you chose.</p>
+      </div>
+    </div>
+
+    <!-- What we store / never store -->
+    <div class="privacy-grid" style="margin-top:2.5rem;">
       <div class="privacy-box">
         <h3>What we store</h3>
         <ul>
           <li>Your email address (for verification only)</li>
           <li>That you cast a ballot (yes/no)</li>
           <li>When you voted (timestamp)</li>
-          <li>Your confirmation receipt ID</li>
+          <li>A random receipt ID (not linked to your choice)</li>
         </ul>
       </div>
       <div class="privacy-box">
         <h3>What we never store</h3>
         <ul>
-          <li>Who you voted for</li>
+          <li>Who you voted for — ever, anywhere</li>
           <li>Any link between your identity and your ballot</li>
-          <li>Your name or address beyond verification</li>
-          <li>Anything an administrator can use to see your vote</li>
+          <li>Your name or address beyond what's needed for verification</li>
+          <li>Any data that would let an admin reconstruct your vote</li>
         </ul>
+      </div>
+    </div>
+
+    <!-- Security guarantees -->
+    <div class="sec-guarantees">
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">🔒</div>
+        <div>
+          <strong>HTTPS everywhere</strong>
+          <p>All traffic is encrypted in transit with TLS. SSL certificates are issued by Let&#x2019;s Encrypt and auto-renew every 60 days.</p>
+        </div>
+      </div>
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">🚫</div>
+        <div>
+          <strong>Double-vote prevention</strong>
+          <p>Once your voter record shows hasVoted = true, the system rejects any further ballot submissions for that election — even if someone has your access code.</p>
+        </div>
+      </div>
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">📋</div>
+        <div>
+          <strong>Transparent audit trail</strong>
+          <p>Admins can see <em>who</em> voted (for quorum verification) but never <em>how</em>. Every access to the audit panel is permanently logged with a timestamp and admin identity.</p>
+        </div>
+      </div>
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">🛡️</div>
+        <div>
+          <strong>JWT-authenticated admin access</strong>
+          <p>Admin sessions use signed JSON Web Tokens with expiry. Tokens are invalidated on logout. Admin credentials are bcrypt-hashed and never stored in plaintext.</p>
+        </div>
+      </div>
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">🏠</div>
+        <div>
+          <strong>Self-hosted = your data stays yours</strong>
+          <p>On the self-hosted edition, your data never leaves your server. You own the database, the encryption keys, and the infrastructure entirely.</p>
+        </div>
+      </div>
+      <div class="sec-guarantee">
+        <div class="sec-g-icon">👁️</div>
+        <div>
+          <strong>Open source = auditable</strong>
+          <p>Every line of code is public on GitHub. Any security researcher, developer, or curious voter can inspect exactly how the privacy model is implemented.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -558,7 +729,7 @@
           <li>Custom branding &amp; logo</li>
           <li>Email support</li>
         </ul>
-        <a href="#signup" class="btn btn-primary">Start free trial →</a>
+        <a href="#signup" class="btn btn-primary">Get started →</a>
       </div>
 
       <!-- Pro -->
@@ -575,7 +746,7 @@
           <li>Priority support</li>
           <li>Custom CNAME subdomain</li>
         </ul>
-        <a href="#signup" class="btn btn-primary">Start free trial →</a>
+        <a href="#signup" class="btn btn-primary">Get started →</a>
       </div>
 
       <!-- Enterprise -->
@@ -599,20 +770,20 @@
     </div>
 
     <p style="text-align:center;margin-top:2rem;font-size:.875rem;color:var(--muted);">
-      All managed plans include a 14-day free trial &nbsp;·&nbsp; No credit card required to start &nbsp;·&nbsp; Competitors charge per election — we don't.
+      7-day free trial &nbsp;·&nbsp; No credit card required &nbsp;·&nbsp; Competitors charge per election — we don't.
     </p>
   </div>
 </section>
 
 <!-- SIGNUP / START FREE TRIAL -->
 <section id="signup" style="background:#f0f6ff;padding:5rem 1.5rem;text-align:center;">
-  <h2 style="font-size:2rem;color:#1a2744;margin-bottom:0.75rem;">Start your 14-day free trial</h2>
-  <p style="color:#6b7280;max-width:480px;margin:0 auto 2.5rem;">No credit card required. Community and Pro plans — cancel any time.</p>
+  <h2 style="font-size:2rem;color:#1a2744;margin-bottom:0.75rem;">Start your 7-day free trial</h2>
+  <p style="color:#6b7280;max-width:480px;margin:0 auto 2.5rem;">No credit card required. Starter and Pro plans — cancel any time.</p>
 
   <form id="signupForm" style="max-width:420px;margin:0 auto;text-align:left;" onsubmit="handleSignup(event)">
     <div style="margin-bottom:1rem;">
       <label style="display:block;font-weight:600;margin-bottom:0.35rem;color:#1a2744;">Organisation name</label>
-      <input id="s_orgName" type="text" placeholder="Gwinnett Democratic Party" required
+      <input id="s_orgName" type="text" placeholder="Your Organization Name" required
         style="width:100%;padding:0.75rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1rem;">
     </div>
     <div style="margin-bottom:1rem;">
@@ -633,10 +804,29 @@
       <input id="s_password" type="password" placeholder="Min 8 characters" required minlength="8"
         style="width:100%;padding:0.75rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1rem;">
     </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block;font-weight:600;margin-bottom:0.5rem;color:#1a2744;">Plan</label>
+      <div style="display:flex;gap:0.75rem;">
+        <label style="flex:1;cursor:pointer;">
+          <input type="radio" name="s_plan" value="starter" checked style="display:none;">
+          <div class="plan-option" data-plan="starter" style="border:2px solid #2563a8;border-radius:8px;padding:0.75rem;text-align:center;background:#eff6ff;">
+            <div style="font-weight:700;color:#1a2744;">Starter</div>
+            <div style="font-size:0.85rem;color:#6b7280;">$29/mo</div>
+          </div>
+        </label>
+        <label style="flex:1;cursor:pointer;">
+          <input type="radio" name="s_plan" value="pro" style="display:none;">
+          <div class="plan-option" data-plan="pro" style="border:2px solid #d1d5db;border-radius:8px;padding:0.75rem;text-align:center;">
+            <div style="font-weight:700;color:#1a2744;">Pro</div>
+            <div style="font-size:0.85rem;color:#6b7280;">$75/mo</div>
+          </div>
+        </label>
+      </div>
+    </div>
     <div id="signupMsg" style="display:none;margin-bottom:1rem;padding:0.75rem 1rem;border-radius:8px;font-size:0.95rem;"></div>
     <button type="submit" id="signupBtn"
       style="width:100%;padding:0.85rem;background:#2563a8;color:white;font-size:1rem;font-weight:700;border:none;border-radius:8px;cursor:pointer;">
-      Create free account →
+      Start 7-day free trial →
     </button>
     <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:#6b7280;">
       Already have an account? <a href="#" onclick="promptLogin()" style="color:#2563a8;">Log in</a>
@@ -737,7 +927,7 @@
           </div>
           <div class="cf-group">
             <label>Organization name</label>
-            <input id="cf_org" type="text" placeholder="Georgia Democratic Party" required>
+            <input id="cf_org" type="text" placeholder="Your Organization Name" required>
           </div>
           <div class="cf-group">
             <label>Email address</label>
@@ -770,6 +960,20 @@
 
 <script>
 // ── Managed signup ────────────────────────────────────────────────────────────
+// Plan selector highlight
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[name="s_plan"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.plan-option').forEach(el => {
+        el.style.border = '2px solid #d1d5db';
+        el.style.background = '';
+      });
+      const selected = document.querySelector('.plan-option[data-plan="' + radio.value + '"]');
+      if (selected) { selected.style.border = '2px solid #2563a8'; selected.style.background = '#eff6ff'; }
+    });
+  });
+});
+
 async function handleSignup(e) {
   e.preventDefault();
   const btn = document.getElementById('signupBtn');
@@ -778,6 +982,7 @@ async function handleSignup(e) {
   const subdomain = document.getElementById('s_subdomain').value.trim().toLowerCase();
   const email     = document.getElementById('s_email').value.trim();
   const password  = document.getElementById('s_password').value;
+  const plan      = document.querySelector('input[name="s_plan"]:checked')?.value || 'starter';
 
   btn.disabled = true;
   btn.textContent = 'Creating account…';
@@ -787,22 +992,29 @@ async function handleSignup(e) {
     const res = await fetch('/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgName, subdomain, adminEmail: email, adminPassword: password })
+      body: JSON.stringify({ orgName, subdomain, adminEmail: email, adminPassword: password, plan })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-    msg.style.display = 'block';
-    msg.style.background = '#dcfce7'; msg.style.color = '#166534'; msg.style.border = '1px solid #bbf7d0';
-    msg.innerHTML = `✅ <strong>Account created!</strong> Your ballot portal is live at:<br>
-      <a href="${data.adminUrl}" style="color:#166534;font-weight:600;">${data.adminUrl}</a>`;
-    btn.textContent = 'Account created!';
+    // Redirect to Stripe checkout to collect card (7-day trial starts after)
+    if (data.checkoutUrl) {
+      btn.textContent = 'Redirecting to checkout…';
+      window.location.href = data.checkoutUrl;
+    } else {
+      // Stripe not configured — go straight to admin
+      msg.style.display = 'block';
+      msg.style.background = '#dcfce7'; msg.style.color = '#166534'; msg.style.border = '1px solid #bbf7d0';
+      msg.innerHTML = `✅ <strong>Account created!</strong> Your ballot portal is live at:<br>
+        <a href="${data.adminUrl}" style="color:#166534;font-weight:600;">${data.adminUrl}</a>`;
+      btn.textContent = 'Account created!';
+    }
   } catch (err) {
     msg.style.display = 'block';
     msg.style.background = '#fef2f2'; msg.style.color = '#991b1b'; msg.style.border = '1px solid #fecaca';
     msg.textContent = '⚠️ ' + err.message;
     btn.disabled = false;
-    btn.textContent = 'Create free account →';
+    btn.textContent = 'Start 7-day free trial →';
   }
 }
 
@@ -864,7 +1076,7 @@ Please respond within one business day (Mon–Fri 8 AM – 5 PM).
 <!-- CTA STRIP -->
 <div class="cta-strip">
   <h2>Ready to run your first election?</h2>
-  <p>Start with a 14-day free trial — no credit card, no setup fees.</p>
+  <p>7-day free trial — no credit card, no setup fees.</p>
   <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
     <a href="#signup" class="btn btn-primary">Start free trial</a>
     <a href="#install" class="btn" style="background:var(--white);color:var(--navy);border:2px solid var(--border);">Download &amp; self-host</a>
