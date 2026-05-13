@@ -153,7 +153,7 @@ const PLANS = {
 // ── Grandfathered tenants (never charged) ────────────────────────────────────
 // Add subdomain strings here for accounts that should never be billed.
 // GDP was our first customer and gets free access forever.
-const GRANDFATHERED_TENANTS = (process.env.GRANDFATHERED_TENANTS || 'gdp').split(',').map(s => s.trim());
+const GRANDFATHERED_TENANTS = (process.env.GRANDFATHERED_TENANTS || '').split(',').map(s => s.trim()).filter(Boolean);
 
 // ==========================================
 // TENANT STORE (replace with real DB in production)
@@ -164,7 +164,7 @@ const TENANTS = {};
 const SUPERADMINS = [
   {
     id: 'superadmin1',
-    email: process.env.SUPERADMIN_EMAIL || 'super@voterterminal.com',
+    email: process.env.SUPERADMIN_EMAIL || 'super@yourdomain.com',
     passwordHash: bcrypt.hashSync(process.env.SUPERADMIN_PASSWORD || 'changeme123', 10)
   }
 ];
@@ -229,7 +229,7 @@ function resolveTenant(req, res, next) {
   const host = (req.hostname || '').toLowerCase();
   // Strip port if present
   const hostname = host.split(':')[0];
-  const baseDomain = (process.env.BASE_DOMAIN || 'voterterminal.com').toLowerCase();
+  const baseDomain = (process.env.BASE_DOMAIN || 'yourdomain.com').toLowerCase();
 
   // Check if it's a subdomain
   if (hostname === baseDomain || hostname === `www.${baseDomain}`) {
@@ -270,7 +270,7 @@ function requireActiveSubscription(req, res, next) {
   if (sub.status === 'cancelled') {
     return res.status(402).json({
       error: 'Subscription cancelled.',
-      upgradeUrl: `https://${process.env.BASE_DOMAIN || 'voterterminal.com'}/#signup`,
+      upgradeUrl: `https://${process.env.BASE_DOMAIN || 'yourdomain.com'}/#signup`,
       code: 'SUBSCRIPTION_CANCELLED'
     });
   }
@@ -282,7 +282,7 @@ function requireActiveSubscription(req, res, next) {
   if (sub.trialEndsAt && new Date(sub.trialEndsAt) < new Date() && sub.plan === 'free') {
     return res.status(402).json({
       error: 'Your free trial has ended. Upgrade to continue running elections.',
-      upgradeUrl: `https://${req.tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin?upgrade=1`,
+      upgradeUrl: `https://${req.tenant.subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin?upgrade=1`,
       code: 'TRIAL_EXPIRED'
     });
   }
@@ -443,18 +443,18 @@ app.post('/api/signup', loginLimiter, async (req, res) => {
         html: `
           <h2>Welcome to VoterTerminal!</h2>
           <p>Your organisation <strong>${orgName}</strong> is live at:</p>
-          <p><a href="https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin">
-            https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin
+          <p><a href="https://${subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin">
+            https://${subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin
           </a></p>
           <p>Log in with your email and the password you set during signup.</p>
           <p>Your free plan includes 3 elections with up to 100 voters each.
-          <a href="https://${process.env.BASE_DOMAIN || 'voterterminal.com'}/pricing">Upgrade anytime</a>
+          <a href="https://${process.env.BASE_DOMAIN || 'yourdomain.com'}/pricing">Upgrade anytime</a>
           to unlock unlimited elections, voter rolls, and email confirmations.</p>
         `
       }).catch(() => {});
     }
 
-    const adminUrl = `https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin`;
+    const adminUrl = `https://${subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin`;
 
     // If Stripe is configured and a paid plan was chosen, create a checkout session with 7-day trial
     let checkoutUrl = null;
@@ -484,7 +484,7 @@ app.post('/api/signup', loginLimiter, async (req, res) => {
 
     res.json({
       success: true,
-      url: `https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}`,
+      url: `https://${subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}`,
       adminUrl,
       checkoutUrl,
       plan: selectedPlan
@@ -528,8 +528,8 @@ app.post('/api/stripe/checkout', requireTenant, async (req, res) => {
         metadata: { subdomain: tenant.subdomain, plan },
         trial_period_days: (!tenant.subscription.stripeSubscriptionId) ? 7 : undefined
       },
-      success_url: `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin?upgraded=1`,
-      cancel_url:  `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin?upgrade=cancelled`,
+      success_url: `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin?upgraded=1`,
+      cancel_url:  `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin?upgrade=cancelled`,
       allow_promotion_codes: true
     };
 
@@ -559,7 +559,7 @@ app.post('/api/admin/billing/portal', requireTenant, verifyAdmin, async (req, re
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: tenant.subscription.stripeCustomerId,
-      return_url: `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin`
+      return_url: `https://${tenant.subdomain}.${process.env.BASE_DOMAIN || 'yourdomain.com'}/admin`
     });
     res.json({ url: session.url });
   } catch (err) {
@@ -976,7 +976,7 @@ const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`VoterTerminal multi-tenant server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Base domain: ${process.env.BASE_DOMAIN || 'voterterminal.com'}`);
+  console.log(`Base domain: ${process.env.BASE_DOMAIN || 'yourdomain.com'}`);
   console.log(`Persistence:  ${TENANTS_FILE}`);
   console.log(`Stripe: ${stripe ? 'enabled' : 'disabled (set STRIPE_SECRET_KEY to enable)'}`);
 });
