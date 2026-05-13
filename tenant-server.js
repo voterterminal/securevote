@@ -91,7 +91,7 @@ app.use(cors({
 // ==========================================
 // Pricing rationale: competitors (ElectionBuddy, Election Runner) charge per election.
 // ElectionBuddy charges $99 for ONE election with 1,000 voters.
-// VoteTerminal's monthly subscription wins for any org running 2+ elections/year.
+// VoterTerminal's monthly subscription wins for any org running 2+ elections/year.
 //
 // -1 = unlimited
 const PLANS = {
@@ -105,14 +105,14 @@ const PLANS = {
     price: 0,
     description: 'Test the platform. 1 election, 50 voters.'
   },
-  community: {
-    name: 'Community',
+  starter: {
+    name: 'Starter',
     maxElectionsPerMonth: 10,
     maxVotersPerElection: 500,
     emailEnabled: true,
     voterRollEnabled: true,
     customBranding: true,
-    price: 1900, // $19/mo
+    price: 2900, // $29/mo
     description: '10 elections/month, 500 voters each, email confirmations.'
   },
   pro: {
@@ -439,9 +439,9 @@ app.post('/api/signup', loginLimiter, async (req, res) => {
       const emailService = new EmailService();
       await emailService.send({
         to: adminEmail,
-        subject: `Welcome to VoteTerminal — ${orgName} is ready`,
+        subject: `Welcome to VoterTerminal — ${orgName} is ready`,
         html: `
-          <h2>Welcome to VoteTerminal!</h2>
+          <h2>Welcome to VoterTerminal!</h2>
           <p>Your organisation <strong>${orgName}</strong> is live at:</p>
           <p><a href="https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin">
             https://${subdomain}.${process.env.BASE_DOMAIN || 'voterterminal.com'}/admin
@@ -503,7 +503,7 @@ app.post('/api/stripe/checkout', requireTenant, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe is not configured on this server. Contact support.' });
 
   const { plan, email } = req.body;
-  const validPaidPlans = ['community', 'pro', 'enterprise'];
+  const validPaidPlans = ['starter', 'pro', 'enterprise'];
   if (!validPaidPlans.includes(plan)) {
     return res.status(400).json({ error: `Invalid plan. Options: ${validPaidPlans.join(', ')}` });
   }
@@ -884,7 +884,7 @@ loadTenants();
 // voting-app-server.js which runs on 3001 (GDP single-tenant).
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
-  console.log(`VoteTerminal multi-tenant server running on port ${PORT}`);
+  console.log(`VoterTerminal multi-tenant server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Base domain: ${process.env.BASE_DOMAIN || 'voterterminal.com'}`);
   console.log(`Persistence:  ${TENANTS_FILE}`);

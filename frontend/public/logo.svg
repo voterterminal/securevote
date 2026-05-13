@@ -1,0 +1,6 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Navy angular C / shield shape -->
+  <path d="M14,10 L58,10 L58,26 L30,26 L30,52 L58,52 L58,68 L30,82 L14,72 Z" fill="#1a2744"/>
+  <!-- Red checkmark -->
+  <path d="M30,46 L44,63 L76,20" fill="none" stroke="#c41230" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

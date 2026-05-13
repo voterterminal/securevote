@@ -1,6 +1,8 @@
 <div align="center">
 
-<h1>🗳️ VoteTerminal</h1>
+<img src="logo.svg" alt="VoterTerminal" width="80" height="80" />
+
+<h1>VoterTerminal</h1>
 
 **Anonymous, secure, self-hostable voting for communities, nonprofits, and civic organizations**
 
@@ -16,7 +18,7 @@
 
 ---
 
-VoteTerminal is an open-source voting platform built for organizations that need **real elections** — not survey-tool workarounds. It separates voter identity from ballot choices at the data level so even administrators cannot see how any individual voted.
+VoterTerminal is an open-source voting platform built for organizations that need **real elections** — not survey-tool workarounds. It separates voter identity from ballot choices at the data level so even administrators cannot see how any individual voted.
 
 Built for HOAs, nonprofits, political parties, civic organizations, and any group that takes democratic process seriously.
 
@@ -43,7 +45,7 @@ Built for HOAs, nonprofits, political parties, civic organizations, and any grou
 ### Option 1 — Self-hosted (one command)
 
 ```bash
-# 1. Download and unzip VoteTerminal, then:
+# 1. Download and unzip VoterTerminal, then:
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -71,7 +73,7 @@ Skip the server entirely. We handle setup, updates, email delivery, and SSL.
 
 ## 🔐 How anonymity works
 
-Most "secure voting" tools claim anonymity but store enough data to reconstruct a voter's choices. VoteTerminal uses a two-table architecture:
+Most "secure voting" tools claim anonymity but store enough data to reconstruct a voter's choices. VoterTerminal uses a two-table architecture:
 
 ```
 voters[]                    votes[]
@@ -206,7 +208,7 @@ docker compose up -d --build app  # redeploy after changes
 | **Multi-chapter** | ❌ | ❌ | ❌ | ✅ |
 | **SLA** | ❌ | ❌ | ❌ | ✅ |
 
-Managed plans include a **7-day free trial** — no setup fees, cancel any time. No per-election fees, ever. Competitors charge $99–$299 per election; VoteTerminal's flat monthly rate saves most active organizations money within 2 months.
+Managed plans include a **7-day free trial** — no setup fees, cancel any time. No per-election fees, ever. Competitors charge $99–$299 per election; VoterTerminal's flat monthly rate saves most active organizations money within 2 months.
 
 → [voterterminal.com/#pricing](https://voterterminal.com/#pricing)
 

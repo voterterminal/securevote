@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './VotingApp.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.REACT_APP_API_URL ||
+  `${window.location.protocol}//${window.location.host}/api`;
 
 // ==========================================
 // MAIN APP COMPONENT
@@ -34,36 +35,7 @@ function OrgLandingPage({ orgConfig, onEnter }) {
   return (
     <div className="org-landing-page">
       <div className="org-landing-card">
-        {logoUrl ? (
-          <img src={logoUrl} alt={orgName} className="org-logo" />
-        ) : (
-          <div className="county-map-container">
-            {/* Gwinnett County, GA — stylised outline */}
-            <svg viewBox="0 0 200 200" className="county-map-svg" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="blur"/>
-                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-              </defs>
-              {/* County body */}
-              <path
-                d="M 62,14 L 105,8 L 150,14 L 186,48 L 190,92 L 178,138 L 148,170 L 100,180 L 58,172 L 22,148 L 8,106 L 10,60 L 28,28 Z"
-                fill="rgba(255,255,255,0.12)"
-                stroke="rgba(255,255,255,0.85)"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-                filter="url(#glow)"
-              />
-              {/* Location pin */}
-              <circle cx="100" cy="96" r="10" fill="rgba(255,255,255,0.9)"/>
-              <circle cx="100" cy="96" r="5"  fill="#003087"/>
-              {/* Subtle inner grid lines */}
-              <line x1="60" y1="95" x2="140" y2="95" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-              <line x1="100" y1="55" x2="100" y2="155" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-            </svg>
-          </div>
-        )}
+        <img src={logoUrl || '/logo.png'} alt={orgName} className="org-logo" />
 
         <div className="org-stars">★ ★ ★ ★ ★</div>
         <h1 className="org-name">{orgName}</h1>
@@ -220,7 +192,7 @@ function AdminPanel({ setUserType, setCurrentUser }) {
     <div className="admin-dashboard">
       <header className="admin-header">
         <div className="admin-brand">
-          <img src="/logo.svg" alt="VoteTerminal" className="admin-logo" />
+          <img src="/logo.svg" alt="VoterTerminal" className="admin-logo" />
           <h1>Admin Dashboard</h1>
         </div>
         <button className="logout-btn" onClick={handleLogout}>Logout</button>
