@@ -772,6 +772,32 @@ input:focus, textarea:focus, select:focus {
   color: var(--accent);
 }
 
+/* Forgot-password link */
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+.link-btn:hover {
+  color: var(--accent);
+}
+
+/* Success message (mirrors error-message but green) */
+.success-message {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  margin-bottom: var(--spacing-sm);
+}
+
 .voter-header h1 {
   color: var(--primary);
   font-size: 1.875rem;

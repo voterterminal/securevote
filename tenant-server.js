@@ -701,6 +701,96 @@ app.post('/api/admin/login', loginLimiter, requireTenant, (req, res) => {
   res.json({ token, admin: { id: admin.id, email: admin.email } });
 });
 
+// ── Password reset (public — no auth required) ────────────────────────────────
+// POST /api/admin/request-reset  { email }
+// Generates a 1-hour token and emails a reset link to the admin.
+app.post('/api/admin/request-reset', loginLimiter, requireTenant, async (req, res) => {
+  const { email } = req.body;
+  const admin = req.tenant.adminUsers.find(a => a.email === email);
+  // Always return 200 so we don't leak which emails are registered
+  if (!admin) return res.json({ success: true, message: 'If that email is registered you will receive a reset link.' });
+
+  // Generate a cryptographically random token
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+
+  // Store on the tenant (initialise map if needed)
+  if (!req.tenant.passwordResetTokens) req.tenant.passwordResetTokens = {};
+  req.tenant.passwordResetTokens[token] = { adminId: admin.id, expiresAt };
+  saveTenants();
+
+  // Send the reset email
+  const resetLink = `${req.protocol}://${req.get('host')}/admin?reset_token=${token}`;
+  const emailSvc = new EmailService(req.tenant.tenantEmailConfig || {});
+  try {
+    await emailSvc.sendEmail({
+      to: admin.email,
+      subject: 'VoterTerminal — Admin password reset',
+      html: `<p>Hi,</p>
+<p>A password reset was requested for your VoterTerminal admin account at <strong>${req.tenant.orgConfig.orgName}</strong>.</p>
+<p><a href="${resetLink}" style="background:#003087;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;display:inline-block;">Reset my password</a></p>
+<p>This link expires in 1 hour. If you did not request a reset, you can safely ignore this email.</p>`,
+      text: `Reset your VoterTerminal admin password: ${resetLink}\n\nExpires in 1 hour.`
+    });
+  } catch (err) {
+    console.error('[password-reset] Email send failed:', err.message);
+  }
+
+  res.json({ success: true, message: 'If that email is registered you will receive a reset link.' });
+});
+
+// POST /api/admin/reset-password  { token, newPassword }
+app.post('/api/admin/reset-password', loginLimiter, requireTenant, (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'token and newPassword are required' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  const tokenMap = req.tenant.passwordResetTokens || {};
+  const entry = tokenMap[token];
+  if (!entry || Date.now() > entry.expiresAt) {
+    return res.status(400).json({ error: 'Reset token is invalid or has expired' });
+  }
+
+  const admin = req.tenant.adminUsers.find(a => a.id === entry.adminId);
+  if (!admin) return res.status(404).json({ error: 'Admin account not found' });
+
+  admin.passwordHash = require('bcryptjs').hashSync(newPassword, 10);
+  delete tokenMap[token]; // One-time use
+  saveTenants();
+
+  res.json({ success: true, message: 'Password updated. You can now log in.' });
+});
+
+// Superadmin force-reset any tenant admin's password (no email needed)
+app.put('/api/superadmin/tenants/:subdomain/reset-admin', verifySuperAdmin, (req, res) => {
+  const tenant = getTenant(req.params.subdomain);
+  if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) return res.status(400).json({ error: 'email and newPassword required' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Min 8 characters' });
+
+  const admin = tenant.adminUsers.find(a => a.email === email);
+  if (!admin) {
+    // If no admin with that email exists, create one
+    const newAdmin = {
+      id: `admin_${Date.now()}`,
+      email,
+      name: email,
+      passwordHash: require('bcryptjs').hashSync(newPassword, 10),
+      role: 'admin'
+    };
+    tenant.adminUsers.push(newAdmin);
+    saveTenants();
+    return res.json({ success: true, action: 'created', message: `New admin ${email} added to ${req.params.subdomain}` });
+  }
+
+  admin.passwordHash = require('bcryptjs').hashSync(newPassword, 10);
+  saveTenants();
+  res.json({ success: true, action: 'reset', message: `Password reset for ${email} on tenant ${req.params.subdomain}` });
+});
+
 // All remaining admin routes require both tenant + admin token
 app.use('/api/admin', requireTenant, requireActiveSubscription, verifyAdmin, (req, res, next) => {
   // Ensure admin belongs to this tenant

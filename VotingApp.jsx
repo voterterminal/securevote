@@ -98,6 +98,69 @@ function AdminPanel({ setUserType, setCurrentUser }) {
   const [activeTab, setActiveTab] = useState('elections');
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [resetMode, setResetMode] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [resetMsg, setResetMsg] = useState('');
+
+  // Check for ?reset_token= in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tok = params.get('reset_token');
+    if (tok) {
+      setResetToken(tok);
+      setResetMode(true);
+    }
+  }, []);
+
+  // Forgot-password handler
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setForgotMsg('');
+    try {
+      await fetch(`${API_URL}/admin/request-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      setForgotMsg('If that email is registered, a reset link has been sent. Check your inbox.');
+    } catch {
+      setForgotMsg('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset-password handler
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (resetPassword !== resetConfirm) { setResetMsg('Passwords do not match.'); return; }
+    if (resetPassword.length < 8) { setResetMsg('Password must be at least 8 characters.'); return; }
+    setLoading(true);
+    setResetMsg('');
+    try {
+      const res = await fetch(`${API_URL}/admin/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: resetToken, newPassword: resetPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Reset failed');
+      setResetMsg('Password updated! You can now log in.');
+      // Clean the token out of the URL
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => { setResetMode(false); setForgotMode(false); }, 2000);
+    } catch (err) {
+      setResetMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Login Handler
   const handleAdminLogin = async (e) => {
@@ -152,6 +215,83 @@ function AdminPanel({ setUserType, setCurrentUser }) {
   };
 
   if (!adminToken) {
+    // ── Password reset form (arrived via email link) ──────────────────────────
+    if (resetMode) {
+      return (
+        <div className="admin-login">
+          <div className="login-form-container">
+            <h2>Set New Password</h2>
+            <form onSubmit={handleResetPassword}>
+              <div className="form-group">
+                <label>New Password</label>
+                <input
+                  type="password"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  placeholder="Min 8 characters"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>Confirm Password</label>
+                <input
+                  type="password"
+                  value={resetConfirm}
+                  onChange={(e) => setResetConfirm(e.target.value)}
+                  placeholder="Repeat new password"
+                />
+              </div>
+              {resetMsg && (
+                <div className={resetMsg.includes('updated') ? 'success-message' : 'error-message'}>
+                  {resetMsg}
+                </div>
+              )}
+              <button type="submit" disabled={loading} className="submit-btn">
+                {loading ? 'Saving...' : 'Set Password'}
+              </button>
+            </form>
+            <button className="back-btn" onClick={() => { setResetMode(false); window.history.replaceState({}, '', window.location.pathname); }}>
+              ← Back to Login
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Forgot-password form ──────────────────────────────────────────────────
+    if (forgotMode) {
+      return (
+        <div className="admin-login">
+          <div className="login-form-container">
+            <h2>Reset Password</h2>
+            <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Enter your admin email and we'll send a reset link.
+            </p>
+            <form onSubmit={handleForgotPassword}>
+              <div className="form-group">
+                <label>Admin Email</label>
+                <input
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="admin@yourorg.com"
+                  autoFocus
+                />
+              </div>
+              {forgotMsg && <div className="success-message">{forgotMsg}</div>}
+              <button type="submit" disabled={loading || !!forgotMsg} className="submit-btn">
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
+            <button className="back-btn" onClick={() => { setForgotMode(false); setForgotMsg(''); }}>
+              ← Back to Login
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Normal login form ─────────────────────────────────────────────────────
     return (
       <div className="admin-login">
         <div className="login-form-container">
@@ -180,6 +320,14 @@ function AdminPanel({ setUserType, setCurrentUser }) {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
+          <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
+            <button
+              className="link-btn"
+              onClick={() => { setForgotMode(true); setLoginError(''); setForgotEmail(adminEmail); }}
+            >
+              Forgot password?
+            </button>
+          </div>
           <button className="back-btn" onClick={() => setUserType(null)}>
             ← Back
           </button>

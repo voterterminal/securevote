@@ -11,8 +11,9 @@
 # Deployment docs — contain server IPs and login details
 REDEPLOY.md
 
-# Internal / enterprise docs
+# Internal / enterprise docs — stay on local machine only
 enterprise/
+TENANT_OPERATIONS.docx
 
 # Node
 node_modules/
