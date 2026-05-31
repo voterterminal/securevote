@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Node modules (installed fresh in Docker)
+node_modules
+voting-app/node_modules
+
+# Dev/doc files
+*.md
+*.docx
+*.html
+admin-preview.html
+voting-preview.html
+CATCH_UP_NOTES.md
+
+# Env files (never bake secrets into the image)
+.env
+.env.local
+.env.*.local
+
+# Build artifacts (rebuilt inside Docker)
+voting-app/build
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+docker/
+
+# macOS
+.DS_Store
